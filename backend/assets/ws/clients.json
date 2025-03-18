@@ -1,0 +1,11 @@
+{
+  "game-rooms": [
+    "gra-1.local"
+  ],
+  "booths": [
+    "booth-1"
+  ],
+  "game-room-door-screens": [
+    "game-room-1"
+  ]
+}

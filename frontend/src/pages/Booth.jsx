@@ -1,0 +1,162 @@
+/* eslint-disable no-unused-vars */
+import { useEffect, useRef, useState } from "react"
+import { useParams } from "react-router-dom"
+import WebSocketService from "../utils/WebSocketService.js"
+import PlayerCard from "../components/PlayerCard.jsx"
+import { Button, Col, Container, Row } from "react-bootstrap"
+import axios from 'axios'
+
+const WS_URL = 'ws://localhost:8081'
+
+/** TODO: fetch images from CSA, cache them, and then serve them */
+
+const Booth = () => {
+   const { booth_id } = useParams()
+   const [players, setPlayers] = useState([])
+   const [message, setMessage] = useState('')
+   const wsService = useRef(null)
+
+   const CLIENT = `booth-${booth_id}`
+
+   useEffect(() => {
+      document.title = `GFA | Booth ${booth_id}`
+   }, [booth_id])
+
+   const getCommonLeague = (players) => {
+      const leagues = players.map(player => player.league)
+  
+      const commonLeague = leagues.reduce((common, league) => {
+          if (!common) return league
+  
+          const sameCountry = common.country === league.country
+          const sameCity = common.city === league.city
+  
+          return (sameCountry && sameCity) ? common : null
+      }, null)
+
+      if (commonLeague) {
+         const { district, other, ...cleanedLeagues } = commonLeague
+         return cleanedLeagues
+     }
+  
+      return null
+   }
+
+   const handleConfirm = async () => {
+      try {
+         if (players.length > 1) {
+            const teamData = {
+               unique_identifiers: players.map(player => player.id),
+               leagues: getCommonLeague(players)
+            }
+
+            const response = await axios.post(`/api/teams/`, teamData)
+
+            if(response.status === 200) {
+               console.log('Players successfully forwarded to the team', response.data)
+               setPlayers([])
+
+               wsService.current.send({
+                  type: 'confirm', 
+                  message_type: 'rfid_scanned',
+                  from: CLIENT,
+               })
+
+               setMessage('Follow the pink lights')
+            }
+         } else {
+            console.log('Single player confirmed.')
+            setPlayers([])
+            wsService.current.send({
+               type: 'confirm', 
+               message_type: 'rfid_scanned',
+               from: CLIENT,
+            })
+
+            setMessage('Follow the pink lights')
+         }
+
+         setTimeout(() => setMessage(''), 5000)
+      } catch (error) {
+         console.log('Error forwarding players to the team:', error.message)
+      }
+   }
+
+  // WebSocket
+  useEffect(() => {
+    if (!wsService.current) {
+       wsService.current = new WebSocketService(WS_URL, CLIENT)
+       wsService.current.connect()
+    }
+
+    const handleWebSocketMessage = async (data) => {
+       console.log('Received WebSocket message:', data)
+
+       if (data.type === 'rfid_scanned'){
+        if (data.location === 'booth' && Number(data.id) === Number(booth_id)) {
+            const playerId = data.player
+
+            try {
+               const response = await axios.get(`/api/players/${playerId}`)
+
+               if (response.status === 200) {
+                  const playerData = response.data
+
+                  setPlayers((prevPlayers) => {
+                     const isAlreadyScanned = prevPlayers.some(p => p.id === playerData.id)
+                     return isAlreadyScanned ? prevPlayers : [...prevPlayers, playerData]
+                  })
+               } else {
+                  console.error('Failed to fetch player data:', response.status)
+               }
+            } catch (error) {
+               console.error('Failed to fetch player data:', error)
+            }
+        }
+       } else if (data.type === 'clientData'){
+         setClients(data.clients)
+      }
+    }
+
+    wsService.current.addListener(handleWebSocketMessage)
+
+    wsService.current.send({ type: 'subscribe', booth_id })
+
+    return () => {
+       if (wsService.current) {
+          wsService.current.removeListener(handleWebSocketMessage)
+          wsService.current.close()
+          wsService.current = null
+       }
+    }
+  }, [booth_id, CLIENT])
+
+  return (
+    <Container className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '100vh', padding: '20px' }}>
+      {players.length > 0 ? (
+        <>
+            <Row className="g-2">
+               {players.map((player, index) => (
+                  <Col key={player.id} xs={12} sm={6} md={4} className="d-flex justify-content-center">
+                     <PlayerCard player={player} />
+                  </Col>
+               ))}
+            </Row>
+         
+            <div className="d-flex justify-content-center mt-2">
+               {!message && (
+                  <Button className="display-6" onClick={() => handleConfirm()}>Confirm</Button>
+               )}
+               {message && (
+                  <h2 className="display-2">{message}</h2>
+               )}
+            </div>
+        </>
+      ) : (
+        <h1 className="display-1">Please scan your tags</h1>
+      )}
+    </Container>
+  )
+}
+
+export default Booth

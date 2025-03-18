@@ -1,0 +1,10 @@
+{
+    "game-room-1": {
+        "roomType": "MonkeyRun",
+        "rules": ["Sort_it", "Bump_it"]
+    },
+    "game-room-2": {
+        "roomType": "MonkeyJump",
+        "rules": ["Sort_it", "Bump_it"]
+    }
+}

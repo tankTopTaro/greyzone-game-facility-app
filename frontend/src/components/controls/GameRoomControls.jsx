@@ -1,0 +1,128 @@
+import { useEffect, useState } from "react"
+import axios from 'axios'
+import { Form, InputGroup, Button } from "react-bootstrap"
+
+const GameRoomControls = ({ clients, playersWithSession }) => {
+    const [playerId, setPlayerId] = useState('')
+    const [gameRoomEnabled, setGameRoomEnabled] = useState([])
+    const [timeCredit, setTimeCredit] = useState('')
+
+    useEffect(() => {
+        const fetchRoomStatus = async () => {
+            if (!clients?.['game-rooms']) return
+
+            // Initialize with false values to prevent undefined issues
+            setGameRoomEnabled(Array(clients['game-rooms'].length).fill(false));
+
+            const status = await Promise.all(
+                clients['game-rooms'].map(async (game_room) => {
+                    const gra_id = game_room.replace('.local', '')
+                    try {
+                        const response = await axios.get(`/api/game-room/${gra_id}/status`);
+                        return response.data.enabled
+                    } catch (error) {
+                        //console.error(`Failed to fetch status for ${gra_id}`, error);
+                        return false
+                    }
+                })
+            )
+            setGameRoomEnabled(status)
+        }
+
+        fetchRoomStatus()
+    }, [clients])
+
+    const toggleGameRoom = async (game_room, index) => {
+        const gra_id = game_room.replace('.local', '')
+        const newStatus = !gameRoomEnabled[index]
+
+        try {
+            const response = await axios.post(`/api/game-room/${gra_id}/toggle-room`, {
+                status: newStatus
+            })
+            if (response.status === 200) {
+                setGameRoomEnabled(prev => {
+                    const updatedStatus = [...prev];
+                    updatedStatus[index] = newStatus; // Toggle the value
+                    return [...updatedStatus]; // Ensure a new array reference
+                });                
+            }
+        } catch (error) {
+            console.error('Request error:', error.response?.data)
+        }
+    }
+
+    const addTimeCredits = async () => {
+        if (!playerId || !timeCredit) {
+            alert("Please select a player and enter the time credits.");
+            return;
+        }
+
+        try {
+            const response = await axios.post('/api/facility-session/add-time-credits', {
+                player_id: playerId,
+                additional_m: parseInt(timeCredit, 10)
+            });
+
+            if (response.status === 200) {
+                alert('Time credits added successfully!');
+                setTimeCredit(''); // Reset input field
+            }
+        } catch (error) {
+            console.error("Failed to add time credits:", error.response?.data);
+            alert("Failed to add time credits.");
+        }
+    }
+
+    return (
+        <div className="p-3">
+            <h4>Add time credits to player</h4>
+            
+            <InputGroup className="w-100 d-flex">
+                <Form.Select 
+                value={playerId}
+                onChange={(e) => setPlayerId(e.target.value)}
+                style={{ height: '38px', flex: '0 0 50%' }}
+                >
+                <option>Select a player</option>
+                {(Array.isArray(playersWithSession) ? playersWithSession : [])
+                    .slice() // Create a shallow copy to avoid mutating the original array
+                    .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
+                    .map((p) => (
+                        <option key={p.id} value={p.id}>
+                            {p.id} - {p.nick_name}
+                        </option>
+                ))}
+                </Form.Select>
+                <Form.Control 
+                    type="number"
+                    placeholder={`minutes`}
+                    className="mb-4"
+                    value={timeCredit}
+                    onChange={(e) => setTimeCredit(e.target.value)}
+                    style={{ height: '38px'}}
+                />
+
+                <Button onClick={addTimeCredits} style={{ height: '38px'}}>Add Time Credits</Button>
+            </InputGroup>
+
+            
+
+            <h4>Enable | Disable Game Rooms</h4>
+
+            {clients?.['game-rooms']?.length > 0 &&
+                clients?.['game-rooms'].map((game_room, index) => (
+                <Form.Check
+                    key={game_room}
+                    type="switch"
+                    label={`${gameRoomEnabled[index] ? "Disable" : "Enable"} ${game_room}`}
+                    checked={gameRoomEnabled[index]}
+                    onChange={() => toggleGameRoom(game_room, index)}
+                />
+                ))
+            }
+        </div>
+    )
+}
+
+export default GameRoomControls
