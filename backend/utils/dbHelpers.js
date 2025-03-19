@@ -166,36 +166,51 @@ const dbHelpers = {
     },
 
     // Database
-    savePlayer: async(playerData) => {
-        const db = dbHelpers.readDatabase(DB_PATH)
+    savePlayer: async (playerData) => {
+      const db = dbHelpers.readDatabase(DB_PATH);
 
-        if(!db['players']){
-            db['players'] = {}
-        }
+      if (!db['players']) {
+         db['players'] = {};
+      }
 
-        const formattedPlayer = {
-            id: playerData.id,
-            nick_name: playerData.nick_name,
-            date_add: playerData.date_add,
-            last_name: playerData.last_name,
-            first_name: playerData.first_name,
-            gender: playerData.gender,
-            birth_date: playerData.birth_date,
-            league: {
-                country: playerData.league_country,
-                city: playerData.league_city,
-                district: playerData.league_district,
-                other: playerData.league_other,
-            }
-        }
+      const formattedPlayer = {
+         id: playerData.id,
+         nick_name: playerData.nick_name,
+         date_add: playerData.date_add,
+         last_name: playerData.last_name,
+         first_name: playerData.first_name,
+         gender: playerData.gender,
+         birth_date: playerData.birth_date,
+         league: {
+            country: playerData.league_country,
+            city: playerData.league_city,
+            district: playerData.league_district,
+            other: playerData.league_other,
+         },
+         games_history: {},
+         facility_session: {}
+      };
 
-        db['players'][playerData.id] = formattedPlayer
+      // Add/Update the player data
+      db['players'][playerData.id] = formattedPlayer;
 
-        dbHelpers.writeDatabase(DB_PATH, db)
-        console.log(`Player ${playerData.id} saved to local database.`)
-    },
+      // Sort the players numerically by the increment part of their ID (after the '-')
+      const sortedPlayers = Object.values(db['players']).sort((a, b) => {
+         const aNumber = parseInt(a.id.split('-')[1], 10);
+         const bNumber = parseInt(b.id.split('-')[1], 10);
+         return aNumber - bNumber;
+      });
 
-    saveTeam: async(teamData, unique_identifiers, leagues) => {
+      // Rebuild the players object with sorted entries
+      db['players'] = Object.fromEntries(sortedPlayers.map(player => [player.id, player]));
+
+      // Write the sorted database back
+      dbHelpers.writeDatabase(DB_PATH, db);
+
+      console.log(`Player ${playerData.id} saved to local database.`);
+   },
+
+    saveTeam: async(teamData, unique_identifiers, league) => {
         const db = dbHelpers.readDatabase(DB_PATH)
 
         if(!db['teams']){
@@ -208,7 +223,9 @@ const dbHelpers = {
             nbr_of_players: teamData.nbr_of_players,
             players: unique_identifiers,
             unique_identifier: teamData.unique_identifier,
-            leagues
+            league,
+            games_history: {},
+            events_to_debrief: []
         }
 
         db['teams'][teamData.id] = formattedTeam

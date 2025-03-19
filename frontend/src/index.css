@@ -44,18 +44,6 @@ h1, h2, h3, h4, h5, h6 {
   isolation: isolate;
 }
 
-.search-container {
-  width: 0;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  transition: width 0.3s ease-in-out;
-}
-
-.search-container.expanded {
-  width: 400px; /* Adjust as needed */
-}
-
 .dropdown-toggle {
   border-top-left-radius: 8px !important;
   border-bottom-left-radius: 8px !important;
@@ -87,3 +75,9 @@ input[type=number] {
   display: flex;
   flex-direction: column;
 }
+
+.player-form-container {
+   max-width: 900px; /* Adjust as needed */
+   margin: 0 auto;   /* Center the form */
+ }
+ 

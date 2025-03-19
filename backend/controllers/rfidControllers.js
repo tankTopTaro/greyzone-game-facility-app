@@ -64,7 +64,7 @@ const checkRfidValidity = async (rfid_tag, player_id)  =>{
         }
 
         try {
-            const response = await axios.get(`${process.env.CSA_API_PLAYERS_UR}/${player_id}`)
+            const response = await axios.get(`${process.env.CSA_API_URL}/players/${player_id}`)
       
             if (response.status === 200) {
                 const playerData = response.data

@@ -33,7 +33,7 @@ const teamsController = {
 
             // Fetch team data from CSA if not in cache
             // console.log(`Fetching team ${teamId} from CSA...`)
-            const csaResponse = await axios.get(`${process.env.CSA_API_TEAMS_URL}/${teamId}`)
+            const csaResponse = await axios.get(`${process.env.CSA_API_URL}/teams/${teamId}`)
 
             if (csaResponse.status === 200 && csaResponse.data) {
                 const teamData = csaResponse.data
@@ -74,7 +74,11 @@ const teamsController = {
             }
 
             // Format the unique_identifiers
-            const formattedIdentifiers = unique_identifiers.sort().join(',')
+            const formattedIdentifiers = unique_identifiers.sort((a, b) => {
+               const aNumber = parseInt(a.id.split('-')[1], 10);
+               const bNumber = parseInt(b.id.split('-')[1], 10);
+               return aNumber - bNumber;
+            }).join(',')
 
             // Check if a team with the same unique_identifiers exists
             const existingTeam = await dbHelpers.findTeamByIdentifiers(formattedIdentifiers)
@@ -115,7 +119,7 @@ const teamsController = {
             const generateCallId = () => `call_${Date.now()}_${Math.floor(Math.random() * 10000)}`
             const apiCallRecord = {
                 call_id: generateCallId(),
-                endpoint: process.env.CSA_API_TEAMS_URL,
+                endpoint: `${process.env.CSA_API_URL}/teams`,
                 payload: teamData,
                 status: "pending",
                 attempts: 0,

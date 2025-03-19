@@ -17,8 +17,6 @@ const Monitor = () => {
    const [showAlerts, setShowAlerts] = useState(false)
    const [players, setPlayers] = useState([])
    const [playersWithSession, setPlayersWithSession] = useState([])
-   const [loading, setLoading] = useState(true)
-   const [error, setError] = useState(null)
    const [message, setMessage] = useState('Waiting for messages...')
    const [clients, setClients] = useState({})
    const [scannedPlayers, setScannedPlayers] = useState({})
@@ -26,7 +24,7 @@ const Monitor = () => {
    
    const wsService = useRef(null)
 
-   const fetchPlayers = async () => {
+/*    const fetchPlayers = async () => {
       try {
          const response = await axios.get('/api/players/')
          if (response.status === 200 && response.data) {
@@ -37,7 +35,7 @@ const Monitor = () => {
       } finally {
          setLoading(false)
       }
-   }
+   } */
 
    const fetchPlayersWithSession = async () => {
       try {
@@ -54,7 +52,7 @@ const Monitor = () => {
 
     useEffect(() => {
       document.title = "GFA | Monitor"
-      fetchPlayers()
+      //fetchPlayers()
       fetchPlayersWithSession()
     }, [])
 
@@ -110,7 +108,7 @@ const Monitor = () => {
             wsService.current = null
          }
       }
-    }, [])
+    }, [scannedPlayers])
 
     return (
          <div className="d-flex flex-column vh-100">  
@@ -120,17 +118,9 @@ const Monitor = () => {
             <Header />
             
             <section className="d-flex p-3 gap-3 flex-grow-1">
-               { loading ? (
-                  <p>Loading players...</p>
-               ) : error ? (
-                  <p>Error: { error }</p>
-               ) : (
-                  <>
-                  <Container className="w-100 flex-grow-1 mb-4">
-                     <Controls wsService={wsService.current} clients={clients} players={players} playersWithSession={playersWithSession} scannedPlayers={scannedPlayers}/>
-                  </Container>
-                  </>
-               )}
+               <Container className="w-100 flex-grow-1 mb-4">
+                  <Controls wsService={wsService.current} clients={clients} players={players} playersWithSession={playersWithSession} scannedPlayers={scannedPlayers}/>
+               </Container>
             </section>
 
             <footer className="w-100 border d-flex align-items-center justify-content-center text-center mt-4" style={{ height: '100px' }}>

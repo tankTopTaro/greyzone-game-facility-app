@@ -1,6 +1,7 @@
+/* eslint-disable react/prop-types */
 import { useEffect, useState } from "react"
 import axios from 'axios'
-import { Form, InputGroup, Button } from "react-bootstrap"
+import { Form, InputGroup, Button, Container } from "react-bootstrap"
 
 const GameRoomControls = ({ clients, playersWithSession }) => {
     const [playerId, setPlayerId] = useState('')
@@ -21,7 +22,7 @@ const GameRoomControls = ({ clients, playersWithSession }) => {
                         const response = await axios.get(`/api/game-room/${gra_id}/status`);
                         return response.data.enabled
                     } catch (error) {
-                        //console.error(`Failed to fetch status for ${gra_id}`, error);
+                        console.error(`Failed to fetch status for ${gra_id}`, error);
                         return false
                     }
                 })
@@ -75,14 +76,14 @@ const GameRoomControls = ({ clients, playersWithSession }) => {
     }
 
     return (
-        <div className="p-3">
+        <Container className="p-3 player-form-container">
             <h4>Add time credits to player</h4>
             
-            <InputGroup className="w-100 d-flex">
+            <InputGroup className="w-100 d-flex mb-4">
                 <Form.Select 
                 value={playerId}
                 onChange={(e) => setPlayerId(e.target.value)}
-                style={{ height: '38px', flex: '0 0 50%' }}
+                style={{ height: '38px', flex: '0 0 35%' }}
                 >
                 <option>Select a player</option>
                 {(Array.isArray(playersWithSession) ? playersWithSession : [])
@@ -94,14 +95,19 @@ const GameRoomControls = ({ clients, playersWithSession }) => {
                         </option>
                 ))}
                 </Form.Select>
-                <Form.Control 
-                    type="number"
-                    placeholder={`minutes`}
-                    className="mb-4"
+
+                <Form.Select
                     value={timeCredit}
                     onChange={(e) => setTimeCredit(e.target.value)}
-                    style={{ height: '38px'}}
-                />
+                    style={{ height: '38px', flex: '0 0 35%' }}
+                >
+                    <option value="">Select time credit</option>
+                    {[5, 10, 15, 20, 25, 30].map((value) => (
+                        <option key={value} value={value}>
+                            {value} minutes
+                        </option>
+                    ))}
+                </Form.Select>
 
                 <Button onClick={addTimeCredits} style={{ height: '38px'}}>Add Time Credits</Button>
             </InputGroup>
@@ -121,7 +127,7 @@ const GameRoomControls = ({ clients, playersWithSession }) => {
                 />
                 ))
             }
-        </div>
+        </Container>
     )
 }
 

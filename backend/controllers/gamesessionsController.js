@@ -54,7 +54,7 @@ const gamesessionsController = {
                 id: jobId,
                 run: async () => {
                     try {
-                        await axios.post(`${process.env.CSA_API_GAME_SESSIONS_URL}/`, gameSessionData)
+                        await axios.post(`${process.env.CSA_API_URL}/game-sessions`, gameSessionData)
                         console.log(`Job ${jobId} completed successfully.`)
                     } catch (error) {
                         console.error(`Job ${jobId} failed:`, error.message)

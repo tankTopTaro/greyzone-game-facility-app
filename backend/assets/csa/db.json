@@ -1,19 +1,5 @@
 {
   "players": {
-    "F1-10": {
-      "id": "F1-10",
-      "nick_name": "PlayerOne",
-      "last_name": "Chief",
-      "first_name": "Kaite",
-      "gender": "male",
-      "birth_date": "2000-03-18",
-      "league": {
-        "country": "USA",
-        "city": "New York",
-        "district": "Manhattan",
-        "other": "University"
-      }
-    },
     "F1-1": {
       "id": "F1-1",
       "nick_name": "Shadow",
@@ -21,72 +7,18 @@
       "last_name": "Smith",
       "first_name": "John",
       "gender": "Male",
-      "birth_date": "1995-08-20T16:00:00.000Z",
+      "birth_date": "1995-08-21T00:00:00.000Z",
       "league": {
         "country": "USA",
         "city": "New York",
         "district": "Manhattan",
         "other": "University League"
       },
+      "games_history": {},
       "facility_session": {
-        "date_start": "2025-03-18 09:36:03",
-        "duration_m": 60,
-        "date_end": "2025-03-18 10:36:03"
-      }
-    },
-    "F1-2": {
-      "id": "F1-2",
-      "nick_name": "Blaze",
-      "date_add": "2025-02-14",
-      "last_name": "Johnson",
-      "first_name": "Emily",
-      "gender": "Female",
-      "birth_date": "1998-05-14T16:00:00.000Z",
-      "league": {
-        "country": "USA",
-        "city": "New York",
-        "district": "Manhattan",
-        "other": "University League"
-      },
-      "facility_session": {
-        "date_start": "2025-03-18 09:36:14",
-        "duration_m": 60,
-        "date_end": "2025-03-18 10:36:14"
-      }
-    },
-    "F1-3": {
-      "id": "F1-3",
-      "nick_name": "Striker",
-      "date_add": "2025-02-14",
-      "last_name": "Williams",
-      "first_name": "Liam",
-      "gender": "Male",
-      "birth_date": "2001-01-09T16:00:00.000Z",
-      "league": {
-        "country": "USA",
-        "city": "New York",
-        "district": "Manhattan",
-        "other": "University League"
-      },
-      "facility_session": {
-        "date_start": "2025-03-18 09:40:35",
-        "duration_m": 60,
-        "date_end": "2025-03-18 10:40:35"
-      }
-    },
-    "F1-4": {
-      "id": "F1-4",
-      "nick_name": "Eagle",
-      "date_add": "2025-02-14",
-      "last_name": "Brown",
-      "first_name": "Sophia",
-      "gender": "Female",
-      "birth_date": "1997-12-04T16:00:00.000Z",
-      "league": {
-        "country": "USA",
-        "city": "New York",
-        "district": "Manhattan",
-        "other": "University League"
+        "date_start": "2025-03-19 08:52:00",
+        "duration_m": 65,
+        "date_end": "2025-03-19 01:57:00"
       }
     },
     "F1-5": {
@@ -96,149 +28,18 @@
       "last_name": "Clark",
       "first_name": "Ethan",
       "gender": "Male",
-      "birth_date": "1997-06-13T16:00:00.000Z",
+      "birth_date": "1997-06-14T00:00:00.000Z",
       "league": {
         "country": "USA",
         "city": "New York",
         "district": "Manhattan",
         "other": "District League"
-      }
-    },
-    "F1-6": {
-      "id": "F1-6",
-      "nick_name": "Falcon",
-      "date_add": "2025-02-14",
-      "last_name": "Lewis",
-      "first_name": "Mia",
-      "gender": "Female",
-      "birth_date": "1998-02-27T16:00:00.000Z",
-      "league": {
-        "country": "USA",
-        "city": "New York",
-        "district": "Manhattan",
-        "other": "District League"
-      }
-    },
-    "F1-7": {
-      "id": "F1-7",
-      "nick_name": "Master Chief",
-      "last_name": "Chief",
-      "first_name": "Master",
-      "gender": "male",
-      "birth_date": "1999-03-18",
-      "league": {
-        "country": "USA",
-        "city": "New York",
-        "district": "Manhattan",
-        "other": "University"
-      }
-    },
-    "F1-8": {
-      "id": "F1-8",
-      "nick_name": "Unicorn",
-      "last_name": "Chief",
-      "first_name": "Master",
-      "gender": "female",
-      "birth_date": "2000-03-18",
-      "league": {
-        "country": "USA",
-        "city": "New York",
-        "district": "Manhattan",
-        "other": "University"
-      }
-    },
-    "F1-9": {
-      "id": "F1-9",
-      "nick_name": "Kai",
-      "last_name": "Spartan",
-      "first_name": "Kai",
-      "gender": "female",
-      "birth_date": "2000-03-18",
-      "league": {
-        "country": "USA",
-        "city": "New York",
-        "district": "Manhattan",
-        "other": "University"
-      }
-    },
-    "F1-11": {
-      "id": "F1-11",
-      "nick_name": "Kaiten",
-      "last_name": "Spartan",
-      "first_name": "Kaiten",
-      "gender": "male",
-      "birth_date": "2000-03-18",
-      "league": {
-        "country": "USA",
-        "city": "New York",
-        "district": "Manhattan",
-        "other": "University"
-      }
-    },
-    "F1-12": {
-      "id": "F1-12",
-      "nick_name": "Master Chief 4",
-      "last_name": "Spartan",
-      "first_name": "Master",
-      "gender": "male",
-      "birth_date": "2000-03-18",
-      "league": {
-        "country": "USA",
-        "city": "New York",
-        "district": "Manhattan",
-        "other": "University"
       },
+      "games_history": {},
       "facility_session": {
-        "date_start": "2025-03-18 10:20:35",
-        "duration_m": 60,
-        "date_end": "2025-03-18 11:20:35"
-      }
-    }
-  },
-  "teams": {
-    "F1-1,F1-2": {
-      "id": "F1-1,F1-2",
-      "name": "Team X-ray 234",
-      "nbr_of_players": 2,
-      "players": [
-        "F1-1",
-        "F1-2"
-      ],
-      "unique_identifier": "F1-1,F1-2",
-      "leagues": {
-        "country": "USA",
-        "city": "New York"
-      }
-    },
-    "F1-1,F1-2,F1-3": {
-      "id": "F1-1,F1-2,F1-3",
-      "name": "Team Sierra 49",
-      "nbr_of_players": 3,
-      "players": [
-        "F1-1",
-        "F1-2",
-        "F1-3"
-      ],
-      "unique_identifier": "F1-1,F1-2,F1-3",
-      "leagues": {
-        "country": "USA",
-        "city": "New York"
-      }
-    },
-    "F1-1,F1-12,F1-2,F1-3": {
-      "id": "F1-1,F1-12,F1-2,F1-3",
-      "name": "Team Sierra 5051",
-      "nbr_of_players": 4,
-      "players": [
-        "F1-1",
-        "F1-12",
-        "F1-2",
-        "F1-3"
-      ],
-      "unique_identifier": "F1-1,F1-12,F1-2,F1-3",
-      "leagues": {
-        "country": "USA",
-        "city": "New York"
+        "date_start": "2025-03-19 08:52:07",
+        "duration_m": 30,
+        "date_end": "2025-03-19 01:22:07"
       }
     }
   }

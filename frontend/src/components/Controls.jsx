@@ -8,7 +8,7 @@ import GameRoomControls from "./controls/GameRoomControls"
 import CreatePlayers from "./controls/CreatePlayers"
 
 const Controls = ({ wsService, clients, players, playersWithSession, scannedPlayers}) => {
-   const [key, setKey] = useState('createPlayerInfo')
+   const [key, setKey] = useState('createFacilitySession')
 
    return (
       <> 
@@ -27,7 +27,7 @@ const Controls = ({ wsService, clients, players, playersWithSession, scannedPlay
                <RfidControls wsService={wsService} clients={clients} playersWithSession={playersWithSession} scannedPlayers={scannedPlayers} />
             </Tab>
             <Tab eventKey="gameRoomControl" title="Others">
-               <GameRoomControls clients={clients} playersWithSession={playersWithSession}  />
+               <GameRoomControls clients={clients} playersWithSession={playersWithSession} />
             </Tab>
          </Tabs>
       </>

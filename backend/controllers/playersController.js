@@ -35,40 +35,13 @@ const playersController = {
 
             // Fetch player data from CSA if not in cache
             console.log(`Fetching player ${playerId} from CSA...`)
-            const csaResponse = await axios.get(`${process.env.CSA_API_PLAYERS_URL}/${playerId}`)
+            const csaResponse = await axios.get(`${process.env.CSA_API_URL}/players/${playerId}`)
 
             if (csaResponse.status === 200 && csaResponse.data) {
                 const playerData = csaResponse.data
 
-                // Transform CSA response to match 'db.json' format
-                const transformedData = {
-                    id: playerData.id,
-                    nick_name: playerData.nick_name,
-                    date_add: playerData.date_add,
-                    last_name: playerData.last_name,
-                    first_name: playerData.first_name,
-                    gender: playerData.gender,
-                    birth_date: playerData.birth_date,
-                    league: {
-                        country: playerData.league_country,
-                        city: playerData.league_city,
-                        district: playerData.league_district,
-                        other: playerData.league_other,
-                    }
-                }
-
-                // Cache the transformed player data
-                cache.players[playerId] = transformedData
-
-                // Sort players by ID before saving
-                const sortedPlayers = Object.values(cache.players).sort((a, b) => {
-                    return parseInt(a.id.slice(-1), 10) - parseInt(b.id.slice(-1), 10);
-                })
-
-                cache.players = Object.fromEntries(sortedPlayers.map(player => [player.id, player]));
-                dbHelpers.writeDatabase(DB_PATH, cache) // Save to db.json
-
-                return res.json(transformedData)
+                // Store player data in local DB first
+                await dbHelpers.savePlayer(playerData)
             } else {
                 return res.status(404).json({ error: "Player not found in CSA" })
             }
@@ -79,29 +52,43 @@ const playersController = {
     },
     
     search: async (req, res) => {
-        try {
-            const { email, phone, first_name, last_name } = req.query
-
-            if (!email && !phone && !first_name && !last_name) {
-                return res.status(400).json({ error: "At least on search parameter is required." })
-            }
-
-            console.log('Forwarding search request to CSA...')
-            const csaResponse = await axios.get(`${process.env.CSA_API_PLAYERS_URL}/search`, {
-                params: { email, phone, first_name, last_name }
-            })
-
-            return res.json(csaResponse.data)
-        } catch (error) {
-            if (error.code === 'ENOTFOUND' || error.code === "ECONNREFUSED") {
-                console.error('CSA API unreachable.')
-                return res.status(503).json({ message: 'CSA_not_reachable' })
-            }
-
-            console.error("Error searching players:", error.message)
-            return res.status(500).json({ error: "Server error" })
-        }
-    },
+      const facility_id = facilityInstance.facility_id; // Example: 1 for F1
+  
+      try {
+          const { email, phone, first_name, last_name } = req.query;
+  
+          if (!email && !phone && !first_name && !last_name) {
+              return res.status(400).json({ error: "At least one search parameter is required." });
+          }
+  
+          const csaResponse = await axios.get(`${process.env.CSA_API_URL}/players/search`, {
+              params: { email, phone, first_name, last_name }
+          });
+  
+          // Filter players by matching facility prefix (e.g., F1-)
+          const filteredData = csaResponse.data.filter(player => {
+              return player.id.startsWith(`F${facility_id}-`);
+          });
+  
+          // Sort by numeric part of the ID
+          const sortedData = filteredData.sort((a, b) => {
+              const aNumber = parseInt(a.id.split('-')[1], 10);
+              const bNumber = parseInt(b.id.split('-')[1], 10);
+              return aNumber - bNumber;
+          });
+  
+          return res.json(sortedData);
+      } catch (error) {
+          if (error.code === 'ENOTFOUND' || error.code === "ECONNREFUSED") {
+              console.error('CSA API unreachable.');
+              return res.status(503).json({ message: 'CSA_not_reachable' });
+          }
+  
+          console.error("Error searching players:", error.message);
+          return res.status(500).json({ error: "Server error" });
+      }
+  },
+  
     
     create: async (req, res) => {
         if (!facilityInstance || !facilityInstance.facility_id) {
@@ -123,7 +110,7 @@ const playersController = {
                 return res.status(400).json({ error: "Invalid email format." })
             }
     
-            if (!/^\d{10,15}$/.test(phone)) {
+            if (!/^\+?\d{10,15}$/.test(phone)) {
                 return res.status(400).json({ error: "Invalid phone number format." })
             }
     
@@ -132,7 +119,7 @@ const playersController = {
             }
     
             // Generate dynamic player id and rfid_tag_uid
-            const next_increment = await dbHelpers.getPlayerNextIncrement(facility_id)
+            const next_increment = dbHelpers.getPlayerNextIncrement(facility_id)
             let playerId = `F${facility_id}-${next_increment}`
             const rfid_tag_uid = `RFID-${playerId}`
     
@@ -168,7 +155,7 @@ const playersController = {
             const generateCallId = () => `call_${Date.now()}_${Math.floor(Math.random() * 10000)}`
             const apiCallRecord = {
                 call_id: generateCallId(),
-                endpoint: process.env.CSA_API_PLAYERS_URL,
+                endpoint: `${process.env.CSA_API_URL}/players`,
                 payload: playerData,
                 status: "pending",
                 attempts: 0,
@@ -205,7 +192,7 @@ const playersController = {
         }
     },
     
-    getPlayers: async (req, res) => {
+/*     getPlayers: async (req, res) => {
         try {
             let cache = dbHelpers.readDatabase(DB_PATH, { players: {} });
     
@@ -225,7 +212,7 @@ const playersController = {
     
                 console.log(`Fetching player ${playerId} from CSA...`);
                 try {
-                    const csaResponse = await axios.get(`${process.env.CSA_API_PLAYERS_URL}/${playerId}`);
+                    const csaResponse = await axios.get(`${process.env.CSA_API_URL}/players/${playerId}`);
                     if (csaResponse.status === 200 && csaResponse.data) {
                         const playerData = csaResponse.data;
     
@@ -277,7 +264,7 @@ const playersController = {
             console.error("Error fetching players:", error.message);
             res.status(500).json({ error: "Could not fetch players" });
         }
-    },
+    }, */
 
     getPlayersWithActiveSession: async (req, res) => {
         try {

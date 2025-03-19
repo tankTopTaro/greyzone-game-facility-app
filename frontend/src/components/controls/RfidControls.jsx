@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-import { Button } from "react-bootstrap"
+import { Button, Container } from "react-bootstrap"
 import Lists from "../Lists"
 import { useState } from "react"
 import axios from 'axios'
@@ -47,7 +47,7 @@ const RfidControls = ({ wsService, clients, playersWithSession, scannedPlayers})
     }
 
     return (
-      <div className="p-3 d-flex flex-column">
+      <Container className="p-3 player-form-container d-flex flex-column">
          <h4 className="mb-4">{`Simulate RFID Scan`}</h4>
          <div className="d-flex w-100 flex-column flex-md-row">
             {/* List Column */}
@@ -99,7 +99,7 @@ const RfidControls = ({ wsService, clients, playersWithSession, scannedPlayers})
 
             
          </div>
-      </div>    
+      </Container>    
     )
 }
 

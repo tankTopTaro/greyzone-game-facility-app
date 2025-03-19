@@ -40,7 +40,7 @@ export default class Facility {
         this.startServer()
         this.monitorCSAConnection()
         this.monitorGRAConnection()
-        this.downloadDatabase(this.facility_id)
+        //this.downloadDatabase(this.facility_id)
     }
 
     startServer() {
@@ -92,11 +92,11 @@ export default class Facility {
     
         const checkConnection = async () => {
             try {
-                const response = await axios.get(process.env.CSA_API_HEALTH_URL);
+                const response = await axios.get(`${process.env.CSA_API_URL}/health`);
                 
                 if (response.status === 200) {
                     this.retryPendingApiCalls(CSA_CALLS_PATH);
-                    this.downloadDatabase(this.facility_id);
+                    //this.downloadDatabase(this.facility_id);
                     if (loggedError) {
                         console.log(`Reconnected! Retrying pending API calls...`);
                         loggedError = false;
@@ -167,7 +167,7 @@ export default class Facility {
         })
     }    
 
-    async downloadAndSaveData(url, filePath) {
+/*     async downloadAndSaveData(url, filePath) {
         try {
             const response = await axios.get(url);
             if (response.status === 200) {
@@ -180,12 +180,12 @@ export default class Facility {
     }
     
     async downloadDatabase(facility_id) {
-        await this.downloadAndSaveData(`${process.env.CSA_API_DOWNLOAD_URL}/${facility_id}`, PLAYERS_PATH);
+        await this.downloadAndSaveData(`${process.env.CSA_API_URL}/download/${facility_id}`, PLAYERS_PATH);
     }
     
     async downloadGameConfig() {
         //await this.downloadAndSaveData('http://gra-1.local:3002/api/game-config/', ROOMS_PATH);
-    }
+    } */
 
     async retryPendingApiCalls(JSON_PATH) {
         const db = dbHelpers.readDatabase(JSON_PATH, {})

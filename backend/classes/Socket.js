@@ -25,7 +25,7 @@ export default class Socket {
     }
 
     init() {
-        const host = process.env.HOSTNAME || 'localhost'
+        const host = process.env.HOST || '0.0.0.0'
         this.socket = new WebSocketServer({ port: this.port, host: host })
 
         this.socket.on('connection', (client, request) => {

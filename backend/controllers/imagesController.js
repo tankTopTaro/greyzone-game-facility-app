@@ -23,7 +23,7 @@ const imagesController = {
 
         try {
             // Fetch image from CSA if not in cache
-            const csaResponse = await axios.get(`${process.env.CSA_API_IMAGES_URL}/players/${player_id}.jpg`, {
+            const csaResponse = await axios.get(`${process.env.CSA_API_URL}/images/players/${player_id}.jpg`, {
                 responseType: 'arraybuffer',
                 validateStatus: (status) => status === 200 || status === 404
             })
