@@ -5,8 +5,8 @@ const router = express.Router()
 
 router.get('/search', playersController.search)
 router.get('/active', playersController.getPlayersWithActiveSession)
+router.get('/recent', playersController.getPlayerWithSessionEndedRecently)
 router.get('/:player_id', playersController.getById)
-//router.get('/', playersController.getPlayers)
 router.post('/', playersController.create)
 
 export default router

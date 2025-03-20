@@ -1,8 +1,14 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import { Badge, Container, ListGroup } from "react-bootstrap"
 
-const Lists = ({ playersWithSession, player, setPlayer, scannedPlayers = {} }) => {
-   const sortedPlayers = [...playersWithSession].sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
+const Lists = ({ playersWithSession, playersWithRecentSession, player, setPlayer, scannedPlayers = {} }) => {
+   const playersToShow = (Array.isArray(playersWithSession) && playersWithSession.length > 0) 
+      ? playersWithSession 
+      : (Array.isArray(playersWithRecentSession) ? playersWithRecentSession : []);
+
+   
+   const sortedPlayers = [...playersToShow].sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
    
    return (
       <Container className="border py-3">

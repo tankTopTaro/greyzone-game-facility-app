@@ -7,7 +7,7 @@ import RfidControls from "./controls/RfidControls"
 import GameRoomControls from "./controls/GameRoomControls"
 import CreatePlayers from "./controls/CreatePlayers"
 
-const Controls = ({ wsService, clients, players, playersWithSession, scannedPlayers}) => {
+const Controls = ({ wsService, clients, players, playersWithSession, playersWithRecentSession, scannedPlayers}) => {
    const [key, setKey] = useState('createFacilitySession')
 
    return (
@@ -24,10 +24,10 @@ const Controls = ({ wsService, clients, players, playersWithSession, scannedPlay
                <FacilityControls players={players} />
             </Tab>
             <Tab eventKey="simulateRfidScan" title="RFID">
-               <RfidControls wsService={wsService} clients={clients} playersWithSession={playersWithSession} scannedPlayers={scannedPlayers} />
+               <RfidControls wsService={wsService} clients={clients} playersWithSession={playersWithSession} playersWithRecentSession={playersWithRecentSession} scannedPlayers={scannedPlayers} />
             </Tab>
             <Tab eventKey="gameRoomControl" title="Others">
-               <GameRoomControls clients={clients} playersWithSession={playersWithSession} />
+               <GameRoomControls clients={clients} playersWithSession={playersWithSession} playersWithRecentSession={playersWithRecentSession} />
             </Tab>
          </Tabs>
       </>

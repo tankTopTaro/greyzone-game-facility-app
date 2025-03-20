@@ -5,7 +5,7 @@ import Lists from "../Lists"
 import { useState } from "react"
 import axios from 'axios'
 
-const RfidControls = ({ wsService, clients, playersWithSession, scannedPlayers}) => {
+const RfidControls = ({ wsService, clients, playersWithSession, playersWithRecentSession, scannedPlayers}) => {
     const [player, setPlayer] = useState({})
 
     const handleScan = async(type, id, player) => {
@@ -46,12 +46,15 @@ const RfidControls = ({ wsService, clients, playersWithSession, scannedPlayers})
         }
     }
 
+    // TODO: Add a new list for players whose session just ended for the past 60 minutes
+
     return (
       <Container className="p-3 player-form-container d-flex flex-column">
          <h4 className="mb-4">{`Simulate RFID Scan`}</h4>
          <div className="d-flex w-100 flex-column flex-md-row">
             {/* List Column */}
-            <div className="d-flex w-100 mb-3 mb-md-0">
+            <div className="d-flex flex-column w-100 mb-3 mb-md-0">
+               <h4>Active Players</h4>
                <Lists
                   playersWithSession={playersWithSession}
                   player={player}

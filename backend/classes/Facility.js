@@ -40,7 +40,7 @@ export default class Facility {
         this.startServer()
         this.monitorCSAConnection()
         this.monitorGRAConnection()
-        //this.downloadDatabase(this.facility_id)
+        this.fetchPlayerSessions()
     }
 
     startServer() {
@@ -167,26 +167,6 @@ export default class Facility {
         })
     }    
 
-/*     async downloadAndSaveData(url, filePath) {
-        try {
-            const response = await axios.get(url);
-            if (response.status === 200) {
-                fs.writeFileSync(filePath, JSON.stringify(response.data, null, 2), 'utf8');
-                console.log(`Data successfully saved to ${filePath}`);
-            }
-        } catch (error) {
-            console.error(`Error fetching data from ${url}:`, error.message);
-        }
-    }
-    
-    async downloadDatabase(facility_id) {
-        await this.downloadAndSaveData(`${process.env.CSA_API_URL}/download/${facility_id}`, PLAYERS_PATH);
-    }
-    
-    async downloadGameConfig() {
-        //await this.downloadAndSaveData('http://gra-1.local:3002/api/game-config/', ROOMS_PATH);
-    } */
-
     async retryPendingApiCalls(JSON_PATH) {
         const db = dbHelpers.readDatabase(JSON_PATH, {})
 
@@ -210,5 +190,16 @@ export default class Facility {
                })
             }
         })
+    }
+
+    async fetchPlayerSessions() {
+      const updatedSessions = await dbHelpers.getPlayerWithActiveSession();
+      const recentSessions = await dbHelpers.getPlayerWithRecentSession();
+
+      this.socket.broadcastMessage('monitor', {
+         type: 'facility_session', 
+         active_players: updatedSessions,
+         recent_players: recentSessions
+      })
     }
 }

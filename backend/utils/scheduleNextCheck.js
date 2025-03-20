@@ -4,7 +4,7 @@ const DEFAULT_CHECK_INTERVAL = 60000; // 60 seconds
 
 const scheduleNextSessionCheck = async (facilityInstance) => {
     if (!facilityInstance || !facilityInstance.socket) {
-        //console.error("Facility instance or socket not initialized.");
+        console.error("Facility instance or socket not initialized.");
         return;
     }
 
@@ -24,24 +24,20 @@ const scheduleNextSessionCheck = async (facilityInstance) => {
 
     let nextCheckTime = nextExpiration ? nextExpiration.time : DEFAULT_CHECK_INTERVAL;
 
-    /* console.log(
-        nextExpiration
-            ? `Next session check in ${nextCheckTime / 1000} seconds for player ${nextExpiration.player_id}`
-            : `No active sessions. Checking again in ${DEFAULT_CHECK_INTERVAL / 1000} seconds.`
-    ); */
-
     // Schedule the next session check
     setTimeout(async () => {
-        //console.log("Checking for session updates...");
+        console.log("Checking for session updates...");
 
         const updatedActivePlayers = await dbHelpers.getPlayerWithActiveSession();
+        const updatedRecentPlayers = await dbHelpers.getPlayerWithRecentSession();
 
         facilityInstance.socket.broadcastMessage("monitor", {
             type: "facility_session",
-            players: updatedActivePlayers
+            active_players: updatedActivePlayers,
+            recent_players: updatedRecentPlayers
         });
 
-        //console.log("Updated active players list broadcasted.");
+        console.log("Updated active players list broadcasted.");
 
         // Schedule the next check
         scheduleNextSessionCheck(facilityInstance);

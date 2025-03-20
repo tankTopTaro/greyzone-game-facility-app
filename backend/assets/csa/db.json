@@ -16,9 +16,30 @@
       },
       "games_history": {},
       "facility_session": {
-        "date_start": "2025-03-19 08:52:00",
-        "duration_m": 65,
-        "date_end": "2025-03-19 01:57:00"
+        "date_start": "2025-03-20 01:48:38",
+        "duration_m": 5,
+        "date_end": "2025-03-20 01:53:38"
+      }
+    },
+    "F1-3": {
+      "id": "F1-3",
+      "nick_name": "Striker",
+      "date_add": "2025-02-14",
+      "last_name": "Williams",
+      "first_name": "Liam",
+      "gender": "Male",
+      "birth_date": "2001-01-10T00:00:00.000Z",
+      "league": {
+        "country": "USA",
+        "city": "New York",
+        "district": "Manhattan",
+        "other": "University League"
+      },
+      "games_history": {},
+      "facility_session": {
+        "date_start": "2025-03-20 01:35:35",
+        "duration_m": 10,
+        "date_end": "2025-03-20 01:45:35"
       }
     },
     "F1-5": {
@@ -40,6 +61,69 @@
         "date_start": "2025-03-19 08:52:07",
         "duration_m": 30,
         "date_end": "2025-03-19 01:22:07"
+      }
+    },
+    "F1-8": {
+      "id": "F1-8",
+      "nick_name": "Unicorn",
+      "date_add": "2025-03-18 09:55:05.400",
+      "last_name": "Chief",
+      "first_name": "Master",
+      "gender": "female",
+      "birth_date": "2000-03-18T00:00:00.000Z",
+      "league": {
+        "country": "USA",
+        "city": "New York",
+        "district": "Manhattan",
+        "other": "University"
+      },
+      "games_history": {},
+      "facility_session": {
+        "date_start": "2025-03-20 01:15:43",
+        "duration_m": 31,
+        "date_end": "2025-03-20 01:46:43"
+      }
+    },
+    "F1-13": {
+      "id": "F1-13",
+      "nick_name": "Batman",
+      "date_add": "2025-03-19 06:50:23.038",
+      "last_name": "Wayne",
+      "first_name": "Bruce",
+      "gender": "male",
+      "birth_date": "2000-03-19T00:00:00.000Z",
+      "league": {
+        "country": "US",
+        "city": "New York",
+        "district": "Manhattan",
+        "other": "University"
+      },
+      "games_history": {},
+      "facility_session": {
+        "date_start": "2025-03-20 00:24:25",
+        "duration_m": 60,
+        "date_end": "2025-03-20 01:24:25"
+      }
+    },
+    "F1-14": {
+      "id": "F1-14",
+      "nick_name": "Pochita",
+      "date_add": "2025-03-19 07:14:22.818",
+      "last_name": "Man",
+      "first_name": "Denji",
+      "gender": "male",
+      "birth_date": "2000-02-29T00:00:00.000Z",
+      "league": {
+        "country": "PH",
+        "city": "New York",
+        "district": "Manhattan",
+        "other": "University"
+      },
+      "games_history": {},
+      "facility_session": {
+        "date_start": "2025-03-19 22:40:15",
+        "duration_m": 65,
+        "date_end": "2025-03-19 23:45:15"
       }
     }
   }

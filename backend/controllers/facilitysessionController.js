@@ -92,8 +92,13 @@ const facilitysessionController = {
       dbHelpers.writeDatabase(DB_PATH, db);
    
       const newPlayerSessions = await dbHelpers.getPlayerWithActiveSession();
-   
-      facilityInstance.socket.broadcastMessage('monitor', { type: 'facility_session', players: newPlayerSessions });
+      const recentPlayerSessions = await dbHelpers.getPlayerWithRecentSession()
+
+      facilityInstance.socket.broadcastMessage('monitor', { 
+         type: 'facility_session', 
+         active_players: newPlayerSessions, 
+         recent_players: recentPlayerSessions
+      });
    
       // Cascade to CSA
       const facilitySessionData = {
@@ -138,100 +143,110 @@ const facilitysessionController = {
       return res.status(200).json({ message: "Facility session created successfully." });
    },
   
+   addTimeCredits: async (req, res) => {
+      const { player_id, additional_m } = req.body;
+  
+      if (!facilityInstance || !facilityInstance.facility_id) {
+          return res.status(500).json({ error: "Facility instance is not initialized." });
+      }
+  
+      if (!player_id || !additional_m) {
+          return res.status(400).json({ error: "Missing required field." });
+      }
+  
+      let db = dbHelpers.readDatabase(DB_PATH, {});
+  
+      if (!db) {
+          return res.status(500).json({ error: 'Failed to read database.' });
+      }
+  
+      let player = db.players[player_id];
+  
+      if (!player || !player.facility_session) {
+          return res.status(404).json({ error: "Player does not have an active facility session." });
+      }
+  
+      // Extract session details
+      const { date_start, duration_m, date_end } = player.facility_session;
+      const now = new Date();
+      const parsedDateEnd = new Date(date_end + 'Z');
+  
+      let new_duration_m;
+      let new_date_start = date_start;
+      let new_date_end;
+  
+      if (parsedDateEnd < now) {
+          // Session has ended, overwrite duration and start new session
+          new_duration_m = additional_m;
+          new_date_start = now.toISOString().replace('T', ' ').slice(0, 19);
+          new_date_end = new Date(now.getTime() + additional_m * 60000).toISOString().replace('T', ' ').slice(0, 19);
+      } else {
+          // Session is still active, extend it
+          new_duration_m = duration_m + additional_m;
+          new_date_end = new Date(parsedDateEnd.getTime() + additional_m * 60000).toISOString().replace('T', ' ').slice(0, 19);
+      }
+  
+      // Update the player's session
+      player.facility_session = {
+          date_start: new_date_start,
+          duration_m: new_duration_m,
+          date_end: new_date_end
+      };
+  
+      db.players[player_id] = player;
 
-    addTimeCredits: async (req, res) => {
-        const { player_id, additional_m } = req.body;
-    
-        if (!facilityInstance || !facilityInstance.facility_id) {
-            return res.status(500).json({ error: "Facility instance is not initialized." });
-        }
-    
-        if (!player_id || !additional_m) {
-            return res.status(400).json({ error: "Missing required field." });
-        }
-    
-        let db = dbHelpers.readDatabase(DB_PATH, {});
-    
-        if (!db) {
-            return res.status(500).json({ error: 'Failed to read database.' });
-        }
-    
-        let player = db.players[player_id];
-    
-        if (!player || !player.facility_session) {
-            return res.status(404).json({ error: "Player does not have an active facility session." });
-        }
-    
-        // Extend the session
-        const { date_start, duration_m, date_end } = player.facility_session;
-    
-        const new_duration_m = duration_m + additional_m;
-        const new_date_end = new Date(new Date(date_end).getTime() + additional_m * 60000)
-            .toISOString().replace("T", " ").slice(0, 19);
-    
-        player.facility_session = {
-            date_start: date_start,
-            duration_m: new_duration_m,
-            date_end: new_date_end
-        };
-    
-        db.players[player_id] = player;
-
-        console.log("Before saving:", db.players);
-        // Save the updated session to the database
-        dbHelpers.writeDatabase(DB_PATH, db);
-
-        console.log("After saving:", JSON.stringify(await dbHelpers.readDatabase(DB_PATH, {})));
-    
-        // Fetch updated player sessions
-        const updatedSessions = await dbHelpers.getPlayerWithActiveSession();
-        console.log("Updated active sessions:", updatedSessions);
-        // Broadcast the updated session to clients
-        facilityInstance.socket.broadcastMessage('monitor', { type: 'facility_session', players: updatedSessions });
-    
-        // Cascade update to CSA
-        const facilitySessionData = {
-            date_exec: date_start,
-            duration_m: new_duration_m,
-            facility_id: facilityInstance.facility_id,
-            player_id: player_id
-        };
-    
-        // Store API call details locally
-        const generateCallId = () => `call_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-        const apiCallRecord = {
-            call_id: generateCallId(),
-            endpoint: `${process.env.CSA_API_URL}/facility-session/update`,
-            payload: facilitySessionData,
-            status: "pending",
-            attempts: 0,
-        };
-    
-        await dbHelpers.storeApiCall(CALLS_PATH, apiCallRecord);
-    
-        const jobId = Date.now();
-    
-        jobQueue.addJob({
-            id: jobId,
-            run: async () => {
-                try {
-                    await axios.post(apiCallRecord.endpoint, facilitySessionData);
-                    console.log(`Job ${jobId} completed successfully.`);
-    
-                    // Mark API call as completed
-                    await dbHelpers.updateApiCallStatus(CALLS_PATH, apiCallRecord.call_id, "completed");
-                } catch (error) {
-                    console.error(`Job ${jobId} failed:`, error.message);
-    
-                    // Mark API call as failed
-                    await dbHelpers.updateApiCallStatus(CALLS_PATH, apiCallRecord.call_id, "failed");
-                }
-            },
-        });
-    
-        return res.json({ message: "Time credits added successfully.", facility_session: player.facility_session });
-    }
-    
+      dbHelpers.writeDatabase(DB_PATH, db);
+  
+      // Fetch updated player sessions
+      const updatedSessions = await dbHelpers.getPlayerWithActiveSession();
+      const recentSessions = await dbHelpers.getPlayerWithRecentSession();
+  
+      facilityInstance.socket.broadcastMessage('monitor', { 
+          type: 'facility_session', 
+          active_players: updatedSessions,
+          recent_players: recentSessions
+      });
+  
+      // Cascade update to CSA
+      const facilitySessionData = {
+          date_exec: new_date_start,
+          duration_m: new_duration_m,
+          facility_id: facilityInstance.facility_id,
+          player_id: player_id
+      };
+  
+      // Store API call details locally
+      const generateCallId = () => `call_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+      const apiCallRecord = {
+          call_id: generateCallId(),
+          endpoint: `${process.env.CSA_API_URL}/facility-session/update`,
+          payload: facilitySessionData,
+          status: "pending",
+          attempts: 0,
+      };
+  
+      await dbHelpers.storeApiCall(CALLS_PATH, apiCallRecord);
+  
+      const jobId = Date.now();
+  
+      jobQueue.addJob({
+          id: jobId,
+          run: async () => {
+              try {
+                  await axios.post(apiCallRecord.endpoint, facilitySessionData);
+                  console.log(`Job ${jobId} completed successfully.`);
+  
+                  await dbHelpers.updateApiCallStatus(CALLS_PATH, apiCallRecord.call_id, "completed");
+              } catch (error) {
+                  console.error(`Job ${jobId} failed:`, error.message);
+  
+                  await dbHelpers.updateApiCallStatus(CALLS_PATH, apiCallRecord.call_id, "failed");
+              }
+          },
+      });
+  
+      return res.json({ message: "Time credits updated successfully.", facility_session: player.facility_session });
+  }
 }
 
 export default facilitysessionController

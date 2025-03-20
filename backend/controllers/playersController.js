@@ -192,80 +192,6 @@ const playersController = {
         }
     },
     
-/*     getPlayers: async (req, res) => {
-        try {
-            let cache = dbHelpers.readDatabase(DB_PATH, { players: {} });
-    
-            // Fetch player IDs from the separate players.json file
-            let playersData = dbHelpers.readDatabase(PLAYERS_PATH, { players: [] });
-    
-            if (!playersData || !Array.isArray(playersData.players) || playersData.players.length === 0) {
-                console.warn("No player IDs found in players.json.");
-                return res.status(404).json({ error: "No player IDs available." });
-            }
-    
-            // Array to store promises of API requests
-            const fetchPromises = playersData.players.map(async (playerId) => {
-                if (cache.players[playerId]) {
-                    return cache.players[playerId]; // Use cached data if available
-                }
-    
-                console.log(`Fetching player ${playerId} from CSA...`);
-                try {
-                    const csaResponse = await axios.get(`${process.env.CSA_API_URL}/players/${playerId}`);
-                    if (csaResponse.status === 200 && csaResponse.data) {
-                        const playerData = csaResponse.data;
-    
-                        // Transform CSA response to match 'db.json' format
-                        const transformedData = {
-                            id: playerData.id,
-                            nick_name: playerData.nick_name,
-                            date_add: playerData.date_add,
-                            last_name: playerData.last_name,
-                            first_name: playerData.first_name,
-                            gender: playerData.gender,
-                            birth_date: playerData.birth_date,
-                            league: {
-                                country: playerData.league_country,
-                                city: playerData.league_city,
-                                district: playerData.league_district,
-                                other: playerData.league_other,
-                            }
-                        };
-    
-                        // Store in cache
-                        cache.players[playerId] = transformedData;
-                        return transformedData;
-                    }
-                } catch (error) {
-                    console.error(`Failed to fetch player ${playerId}: `, error.message);
-                }
-                return null;
-            });
-    
-            // Wait for all fetches to complete
-            const fetchedPlayers = await Promise.all(fetchPromises);
-    
-            // Remove null values (failed fetches)
-            const validPlayers = fetchedPlayers.filter(player => player !== null);
-    
-            // Sort players before saving
-            const sortedPlayers = Object.values(cache.players).sort((a, b) => {
-                return parseInt(a.id.slice(-1), 10) - parseInt(b.id.slice(-1), 10);
-            })
-
-            cache.players = Object.fromEntries(sortedPlayers.map(player => [player.id, player]));
-    
-            // Save updated player data to db.json
-            dbHelpers.writeDatabase(DB_PATH, cache);
-    
-            res.status(200).json({ players: validPlayers });
-        } catch (error) {
-            console.error("Error fetching players:", error.message);
-            res.status(500).json({ error: "Could not fetch players" });
-        }
-    }, */
-
     getPlayersWithActiveSession: async (req, res) => {
         try {
             let activePlayers = await dbHelpers.getPlayerWithActiveSession()
@@ -274,6 +200,16 @@ const playersController = {
             console.error('Error fetching active players:', error.message);
             res.status(500).json({ error: 'Could not fetch active player data' });
         }
+    },
+
+    getPlayerWithSessionEndedRecently: async (req, res) => {
+         try {
+            let recentPlayers = await dbHelpers.getPlayerWithRecentSession()
+            res.status(200).json(recentPlayers);
+         } catch (error) {
+            console.error('Error fetching players with recently ended session:', error.message);
+            res.status(500).json({ error: 'Could not fetch players with recently ended session' });
+         }
     }
 }
 

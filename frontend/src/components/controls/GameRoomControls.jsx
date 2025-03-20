@@ -1,9 +1,10 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react"
 import axios from 'axios'
 import { Form, InputGroup, Button, Container } from "react-bootstrap"
 
-const GameRoomControls = ({ clients, playersWithSession }) => {
+const GameRoomControls = ({ clients, playersWithSession, playersWithRecentSession }) => {
     const [playerId, setPlayerId] = useState('')
     const [gameRoomEnabled, setGameRoomEnabled] = useState([])
     const [timeCredit, setTimeCredit] = useState('')
@@ -81,19 +82,39 @@ const GameRoomControls = ({ clients, playersWithSession }) => {
             
             <InputGroup className="w-100 d-flex mb-4">
                 <Form.Select 
-                value={playerId}
-                onChange={(e) => setPlayerId(e.target.value)}
-                style={{ height: '38px', flex: '0 0 35%' }}
-                >
-                <option>Select a player</option>
-                {(Array.isArray(playersWithSession) ? playersWithSession : [])
-                    .slice() // Create a shallow copy to avoid mutating the original array
-                    .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
-                    .map((p) => (
-                        <option key={p.id} value={p.id}>
-                            {p.id} - {p.nick_name}
-                        </option>
-                ))}
+                  value={playerId}
+                  onChange={(e) => setPlayerId(e.target.value)}
+                  style={{ height: '38px', flex: '0 0 35%' }}
+                  >
+                  <option>Select a player</option>
+                  
+                  {/* Players with active session */}
+                  {Array.isArray(playersWithSession) && playersWithSession.length > 0 && (
+                     <optgroup label="Active Sessions">
+                        {playersWithSession
+                           .slice() // Create a shallow copy to avoid mutating the original array
+                           .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
+                           .map((p) => (
+                              <option key={p.id} value={p.id}>
+                                 {p.id} - {p.nick_name}
+                              </option>
+                           ))}
+                     </optgroup>
+                  )}
+
+                  {/* Players with recently ended sessions */}
+                  {Array.isArray(playersWithRecentSession) && playersWithRecentSession.length > 0 && (
+                     <optgroup label="Recently Ended Sessions">
+                        {playersWithRecentSession
+                           .slice()
+                           .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
+                           .map((p) => (
+                              <option key={p.id} value={p.id}>
+                                 {p.id} - {p.nick_name}
+                              </option>
+                           ))}
+                     </optgroup>
+                  )}
                 </Form.Select>
 
                 <Form.Select

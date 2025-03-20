@@ -17,25 +17,12 @@ const Monitor = () => {
    const [showAlerts, setShowAlerts] = useState(false)
    const [players, setPlayers] = useState([])
    const [playersWithSession, setPlayersWithSession] = useState([])
+   const [playersWithRecentSession, setPlayersWithRecentSession] = useState([])
    const [message, setMessage] = useState('Waiting for messages...')
    const [clients, setClients] = useState({})
    const [scannedPlayers, setScannedPlayers] = useState({})
    
-   
    const wsService = useRef(null)
-
-/*    const fetchPlayers = async () => {
-      try {
-         const response = await axios.get('/api/players/')
-         if (response.status === 200 && response.data) {
-            setPlayers(response.data.players)
-         }
-      } catch (error) {
-         setError(error.message)
-      } finally {
-         setLoading(false)
-      }
-   } */
 
    const fetchPlayersWithSession = async () => {
       try {
@@ -50,10 +37,23 @@ const Monitor = () => {
       } 
    }
 
+   const fetchPlayersWithRecentSession = async () => {
+      try {
+         const response = await axios.get('/api/players/recent')
+         if (response.status === 200 && response.data) {
+            setPlayersWithRecentSession(response.data)
+         } else if (response.status === 204) {
+            setPlayersWithRecentSession([])
+         }
+      } catch (error) {
+         console.error('Error fetching players whose session just ended:', error)
+      }
+   }
+
     useEffect(() => {
       document.title = "GFA | Monitor"
-      //fetchPlayers()
       fetchPlayersWithSession()
+      fetchPlayersWithRecentSession()
     }, [])
 
     // WebSocket
@@ -91,7 +91,8 @@ const Monitor = () => {
          } else if (data.type === 'updatedPlayers') {
             setPlayers(data.players)
          } else if (data.type === 'facility_session') {
-            setPlayersWithSession(data.players)
+            setPlayersWithSession(data.active_players)
+            setPlayersWithRecentSession(data.recent_players)
          } else {
             setMessage(data.message || 'No message received')
          }
@@ -119,7 +120,7 @@ const Monitor = () => {
             
             <section className="d-flex p-3 gap-3 flex-grow-1">
                <Container className="w-100 flex-grow-1 mb-4">
-                  <Controls wsService={wsService.current} clients={clients} players={players} playersWithSession={playersWithSession} scannedPlayers={scannedPlayers}/>
+                  <Controls wsService={wsService.current} clients={clients} players={players} playersWithSession={playersWithSession} playersWithRecentSession={playersWithRecentSession} scannedPlayers={scannedPlayers}/>
                </Container>
             </section>
 
