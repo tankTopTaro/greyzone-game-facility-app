@@ -1,3 +1,50 @@
 {
-  "pending_api_calls": []
+  "pending_api_calls": [
+    {
+      "call_id": "call_1742455604649_3548",
+      "endpoint": "http://gra-1.local:3002/api/start-game-session",
+      "payload": {
+        "team": null,
+        "players": [],
+        "room": "MonkeyRun,Sort_it,L1",
+        "book_room_until": null
+      },
+      "status": "failed",
+      "attempts": 0
+    },
+    {
+      "call_id": "call_1742456864399_906",
+      "endpoint": "http://gra-1.local:3002/api/start-game-session",
+      "payload": {
+        "team": null,
+        "players": [
+          {
+            "id": "F1-1",
+            "nick_name": "Shadow",
+            "date_add": "2025-02-14",
+            "last_name": "Smith",
+            "first_name": "John",
+            "gender": "Male",
+            "birth_date": "1995-08-21T00:00:00.000Z",
+            "league": {
+              "country": "USA",
+              "city": "New York",
+              "district": "Manhattan",
+              "other": "University League"
+            },
+            "games_history": {},
+            "facility_session": {
+              "date_start": "2025-03-20 07:26:34",
+              "duration_m": 30,
+              "date_end": "2025-03-20 07:56:34"
+            }
+          }
+        ],
+        "room": "MonkeyRun,Sort_it,L1",
+        "book_room_until": "2025-03-20 08:02:34"
+      },
+      "status": "failed",
+      "attempts": 0
+    }
+  ]
 }

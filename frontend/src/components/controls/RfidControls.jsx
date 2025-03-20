@@ -34,26 +34,47 @@ const RfidControls = ({ wsService, clients, playersWithSession, playersWithRecen
             if (response.status === 200 && response.data) {
                 console.log(response.data)
 
-                wsService.send({
-                    type: 'rfid_scanned',
-                    location: type, // Send 'booth' or 'game-room'
-                    id: id,
-                    player: player.id
-                })
             }
         } catch (error) {
             console.log('Error scanning RFID', error.message)
         }
     }
 
-    // TODO: Add a new list for players whose session just ended for the past 60 minutes
-
+    const groupClients = () => {
+      const grouped = {};
+   
+      // Group booths
+      clients?.['booths']?.forEach((booth, index) => {
+         const match = booth.match(/(\d+)$/); // Extract number from the name
+         if (match) {
+            const id = match[0]; // Extracted number
+            if (!grouped[id]) grouped[id] = {};
+            grouped[id].booth = { name: booth, index };
+         }
+      });
+   
+      // Group game-room-door-screens
+      clients?.['game-room-door-screens']?.forEach((game_room, index) => {
+         const match = game_room.match(/(\d+)$/);
+         if (match) {
+            const id = match[0];
+            if (!grouped[id]) grouped[id] = {};
+            grouped[id].gameRoom = { name: game_room, index };
+         }
+      });
+   
+      return grouped;
+   };
+   
+   const groupedClients = groupClients();   
+    
     return (
       <Container className="p-3 player-form-container d-flex flex-column">
          <h4 className="mb-4">{`Simulate RFID Scan`}</h4>
-         <div className="d-flex w-100 flex-column flex-md-row">
-            {/* List Column */}
-            <div className="d-flex flex-column w-100 mb-3 mb-md-0">
+
+         {/* Lists Section (2 Columns) */}
+         <div className="d-flex flex-column flex-md-row w-100">
+            <div className="d-flex flex-column w-100 w-md-50 p-2">
                <h4>Active Players</h4>
                <Lists
                   playersWithSession={playersWithSession}
@@ -62,47 +83,43 @@ const RfidControls = ({ wsService, clients, playersWithSession, playersWithRecen
                   scannedPlayers={scannedPlayers}
                />
             </div>
-         
-            {/* Booth and Game Room Columns */}
-            <div className="d-flex w-100 flex-md-row flex-wrap">
-               {/* Booth Column */}
-               <div className="p-2 d-flex justify-content-center flex-grow-1 mb-3 mb-md-0">
-                  <div className="d-flex flex-column w-100">
-                     {clients?.['booths']?.length > 0 &&
-                        clients?.['booths'].map((booth, index) => (
-                           <Button
-                              key={booth}
-                              className="mb-2 me-2"
-                              style={{ width: '100%' }} // Adjust width and max width
-                              onClick={() => handleScan('booth', index + 1, player)}
-                           >
-                              Scan at {booth}
-                           </Button>
-                        ))}
-                  </div>
-               </div>
-
-               {/* Game Room Column */}
-               <div className="p-2 d-flex justify-content-center flex-grow-1 mb-3 mb-md-0">
-                  <div className="d-flex flex-column w-100">
-                     {clients?.['game-room-door-screens']?.length > 0 &&
-                        clients?.['game-room-door-screens'].map((game_room, index) => (
-                           <Button
-                              key={game_room}
-                              className="mb-2 me-2"
-                              style={{ width: '100%' }} // Adjust width and max width
-                              onClick={() => handleScan('game-room', index + 1, player)}
-                           >
-                              Scan at {game_room}
-                           </Button>
-                        ))}
-                  </div>
-               </div>
+            <div className="d-flex flex-column w-100 w-md-50 p-2">
+               <h4>Recent Players</h4>
+               <Lists
+                  playersWithRecentSession={playersWithRecentSession}
+                  player={player}
+               />
             </div>
-
-            
          </div>
-      </Container>    
+
+         {/* Buttons Section */}
+         <div className="d-flex flex-wrap justify-content-center w-100 mt-4">
+            {Object.entries(groupedClients).map(([id, { booth, gameRoom }]) => (
+               <div key={id} className="p-2 d-flex flex-column">
+                  {booth && (
+                     <Button
+                        className="mb-2"
+                        style={{ minWidth: '200px', maxWidth: '300px' }}
+                        onClick={() => handleScan('booth', booth.index + 1, player)}
+                        disabled={!player?.id} // Disable if no player is selected
+                     >
+                        Scan at {booth.name}
+                     </Button>
+                  )}
+                  {gameRoom && (
+                     <Button
+                        className="mb-2"
+                        style={{ minWidth: '200px', maxWidth: '300px' }}
+                        onClick={() => handleScan('game-room', gameRoom.index + 1, player)}
+                        disabled={!player?.id} // Disable if no player is selected
+                     >
+                        Scan at {gameRoom.name}
+                     </Button>
+                  )}
+               </div>
+            ))}
+         </div>
+      </Container>
     )
 }
 

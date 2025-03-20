@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import { useParams } from "react-router-dom"
 import WebSocketService from "../utils/WebSocketService.js"
 import PlayerCard from "../components/PlayerCard.jsx"
-import { Button } from "react-bootstrap"
+import { Button, Container, Row } from "react-bootstrap"
 import axios from "axios"
 
 const WS_URL = 'ws://localhost:8081'
@@ -69,7 +69,7 @@ const GameRoomDoorScreen = () => {
             if (response.status === 200) {
               console.log('Game Session will start')
 
-              setTimeout(() => {
+              /* setTimeout(() => {
                 wsService.current.send({
                   type: 'confirm', 
                   message_type: 'rfid_scanned',
@@ -77,7 +77,7 @@ const GameRoomDoorScreen = () => {
                 })
                 setGameReady(false)
                 setScannedPlayers([])
-              }, 5000)
+              }, 5000) */
             }
           } catch (error) {
             console.error('Error submitting game session')
@@ -107,18 +107,31 @@ const GameRoomDoorScreen = () => {
    */
 
   return (
-    <div className="d-flex flex-column align-items-center justify-content-center">
-      {scannedPlayers.length > 0 ? (
-        <div className="text-center">
-          {scannedPlayers.map((player, index) => (
-            <PlayerCard key={player.id} player={player} />
-          ))}
-          {gameReady && <h2 className="text-success mt-3">Please come in!</h2>}
-        </div>
-      ) : (
-        <h1 className="display-1">Please scan your tags</h1>
-      )}
-    </div>
+      <Container className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '100vh', padding: '20px' }}>
+         {scannedPlayers.length > 0 ? (
+         <>
+            <Row className="g-2">
+               {scannedPlayers.map((player, index) => (
+                  <PlayerCard key={player.id} classes={'p-2'} cardStyle={{width: '300px'}}>
+                     <div className="d-flex align-items-center w-100">
+                        <img 
+                           src={`/api/images/players/${player.id}.jpg`} 
+                           alt={`${player.nick_name}'s image`}
+                           style={{ height: '100px', width: '100px' }}
+                        />
+                        <h4 className="display-6 w-100 text-center">{player.nick_name}</h4>
+                     </div>
+                  </PlayerCard>
+               ))}
+               {gameReady && <h2 className="text-success text-center">Please come in!</h2>}
+            </Row>
+         </>
+         ) : (
+         <h1 className="display-1">Please scan your tags</h1>
+         )}
+      </Container>
+
+
   )
 }
 

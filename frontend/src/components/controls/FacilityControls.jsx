@@ -13,14 +13,18 @@ const FacilityControls = () => {
 
     const [category, setCategory] = useState('email')
     const [query, setQuery] = useState('')
+    const [searchAttempted, setSearchAttempted] = useState(false)
 
     useEffect(() => {
       if (query === '') {
          setPlayers([])
+         setSearchAttempted(false)
       }
     }, [query])
  
     const handleSearchClick = async () => {
+      setSearchAttempted(true)
+      
       try {
          const response = await axios.get(`/api/players/search?${category}=${encodeURIComponent(query)}`)
          if (response.status === 200) {
@@ -67,7 +71,7 @@ const FacilityControls = () => {
             <h4 className="mb-4">Create Facility Session</h4>
             <SearchBar category={category} query={query} setQuery={setQuery} setCategory={setCategory} handleSearchClick={handleSearchClick}/>
             <div className="mt-4">
-               {players.length > 0 && (
+               {players.length > 0 ? (
                   players.map((player) => (
                      <PlayerCard key={player.id} classes={'w-100 p-2 gap-2'}>
                         <div className="d-flex w-100">
@@ -126,9 +130,10 @@ const FacilityControls = () => {
                         </InputGroup> 
                      </PlayerCard>
                   ))
+               ) : searchAttempted && (
+                  <p className="text-muted text-center mt-3">No players found. Try a different search.</p>
                )}
             </div>
-            {/* */}
         </Container>
     )
 }

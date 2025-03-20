@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import { WebSocketServer } from 'ws'
 import dbHelpers from '../utils/dbHelpers.js'
+import checkRfidValidity from '../utils/checkRfidValidity.js'
 
 dotenv.config()
 const __filename = fileURLToPath(import.meta.url)
@@ -89,103 +90,13 @@ export default class Socket {
         }
     }
 
-    handleClientMessage(message) {
+   handleClientMessage(message) {
         try {
             const data = JSON.parse(message.toString())
             
             if (data.type === 'rfid_scanned' && data.location && data.id) {
-                const locationKey = `${data.location}-${data.id}`
-                const scannedPlayers = dbHelpers.readDatabase(SCANS_PATH, {})
-                const gameRoom = `game-room-${data.id}`
-
-                if (data.location === 'booth') {
-                    console.log(`Scans coming from ${locationKey}...`)
-
-                    if (!scannedPlayers[gameRoom]) {
-                        scannedPlayers[gameRoom] ={
-                            'scans-from-booth': [],
-                            'scans-from-game-room': [],
-                            'status': 'waiting'
-                        }
-                    }
-
-                    if (data.player) {
-                        scannedPlayers[gameRoom]['scans-from-booth'].push(data.player)
-                    }
-
-                    dbHelpers.writeDatabase(SCANS_PATH, scannedPlayers)
-                    dbHelpers.appendMessages(data)
-
-                    this.broadcastMessage(locationKey, data)
-                    this.broadcastMessage('monitor', data)
-                } else if (data.location === 'game-room') {
-                    const locationKey = `${data.location}-${data.id}`
-
-                    if (!scannedPlayers[locationKey]) {
-                        scannedPlayers[locationKey] ={
-                            'scans-from-booth': [],
-                            'scans-from-game-room': [],
-                            'status': 'waiting'
-                        }
-                    }
-
-                    if (data.player) {
-                        const scansFromBooth = scannedPlayers[locationKey]['scans-from-booth']
-                        const scansFromGameRoom = scannedPlayers[locationKey]['scans-from-game-room']
-                    
-                        // Add player to the game-room scan list if not already present
-                        if (!scansFromGameRoom.includes(data.player)) {
-                            scansFromGameRoom.push(data.player)
-
-                            if (roomTimeouts[locationKey]) {
-                                clearTimeout(roomTimeouts[locationKey])
-                            }
-                        }
-
-                        // Check if all booth-scanned players have arrived
-                        const allPlayersArrived = scansFromBooth.every(player => scansFromGameRoom.includes(player))
-
-                        if (allPlayersArrived) {
-                            console.log(`All players have arrived in ${locationKey}`)
-                            scannedPlayers[locationKey].status = 'ready'
-
-                            if (roomTimeouts[locationKey]) {
-                                clearTimeout(roomTimeouts[locationKey])
-                                delete roomTimeouts[locationKey]
-                            }
-
-                            this.broadcastMessage(locationKey, {
-                                type: 'status_update',
-                                status: 'ready',
-                                playerIds: scansFromBooth,
-                                locationKey: locationKey
-                            })
-                        } else {
-                            console.log(`Waiting for remaining players in ${locationKey}...`)
-
-                            roomTimeouts[locationKey] = setTimeout(() => {
-                                const updatedScans = dbHelpers.readDatabase(SCANS_PATH, {})
-                                const updatedScansFromGameRoom = updatedScans[locationKey]?.['scans-from-game-room'] || []
-                
-                                const stillMissingPlayers = scansFromBooth.filter(player => !updatedScansFromGameRoom.includes(player))
-                
-                                if (stillMissingPlayers.length > 0) {
-                                    console.log(`Time's up! Missing players: ${stillMissingPlayers.join(', ')}.`)
-                                    console.log(`Revoking room access. Players must return to the booth.`)
-                                    delete scannedPlayers[locationKey] // Reset the game-room entry
-                                }
-                                
-                                dbHelpers.writeDatabase(SCANS_PATH, scannedPlayers)
-                            }, 60000)
-                        }
-                    }
-
-                    dbHelpers.writeDatabase(SCANS_PATH, scannedPlayers)
-                    dbHelpers.appendMessages(data)
-                    this.broadcastMessage(locationKey, data)
-                    this.broadcastMessage('monitor', data)
-                }
-            } else if (data.type === 'confirm' && data.from) {
+                this.handleRfidScan(data)             
+            } else  if (data.type === 'confirm' && data.from) {
                 dbHelpers.clearMessages(data.message_type, data.from)
                 this.broadcastMessage('monitor', {type: 'confirmed'})
             }
@@ -264,59 +175,129 @@ export default class Socket {
     }
 
     sendStoredMessages(client, clientname) {
-        if (!clientname) {
-            console.error("sendStoredMessages: clientname is undefined")
-            return
-        }
-    
-        const storedMessages = dbHelpers.readDatabase(MESSAGES_PATH, [])
+      if (!clientname) {
+          console.error("sendStoredMessages: clientname is undefined")
+          return
+      }
+  
+      let storedMessages = dbHelpers.readDatabase(MESSAGES_PATH, [])
+  
+      if (storedMessages.length === 0) {
+          console.log(`No stored messages found for ${clientname}`)
+          return
+      }
+  
+      let clientType
+      let clientIdNumber
+  
+      if (clientname === "monitor") {
+          clientType = "monitor"
+          clientIdNumber = null // Monitor gets all messages
+      } else {
+          const parts = clientname.split('-')
+          clientType = parts.length === 2 ? parts[0] : `${parts[0]}-${parts[1]}`
+          clientIdNumber = Number(parts.length === 2 ? parts[1] : parts[2]) // Ensure it's a number
+      }
+  
+      // Filter relevant messages
+      const relevantMessages = storedMessages.filter(msg => {
+          if (!msg.location || !msg.id) return false
+          
+          if (clientType === 'booth') {
+              return msg.location === 'booth' && Number(msg.id) === clientIdNumber
+          }
+  
+          if (clientType === 'game-room') {
+              return msg.location === 'game-room' && Number(msg.id) === clientIdNumber
+          }
+  
+          if (clientType === 'monitor') {
+              return true // Monitor gets everything
+          }
+  
+          return false
+      })
+  
+      if (relevantMessages.length > 0) {
+          console.log(`Sending ${relevantMessages.length} messages to ${clientname}`)
+          relevantMessages.forEach((msg) => client.send(JSON.stringify(msg)))
+  
+          // **Remove sent messages from the database**
+          storedMessages = storedMessages.filter(msg => !relevantMessages.includes(msg))
+          dbHelpers.writeDatabase(MESSAGES_PATH, storedMessages) // Save updated messages
+      } else {
+          console.log(`No relevant messages found for ${clientname}`)
+      }
+  }
 
-        let clientType
-        let clientIdNumber
-    
-        if (storedMessages.length > 0) {
-            // Special handling for monitor client
-            if (clientname === "monitor") {
-                  clientType = "monitor"
-                  clientIdNumber = null // Monitor doesn't have an ID
-            } else {
-                  // For other clients (booth or game-room), split the client name
-                  const parts = clientname.split('-')
-                  clientType = parts.length === 2 ? parts[0] : `${parts[0]}-${parts[1]}`
-                  const clientId = parts.length === 2 ? parts[1] : parts[2] // The last part is always the ID
-                  clientIdNumber = Number(clientId) // Ensure it's a number
-            }
-            // Ensure messages are sent to the correct client type and ID
-            const relevantMessages = storedMessages.filter(msg => {
-                if (!msg.location || !msg.id) return false // Ensure valid messages
-                
-                // Match Booth messages
-                if (clientType === 'booth') {
-                    return msg.location === 'booth' && Number(msg.id) === clientIdNumber
-                }
-                
-                // Match Game Room messages
-                if (clientType === 'game-room') {
-                  return msg.location === 'game-room' && Number(msg.id) === clientIdNumber
-                }
-    
-                // Send all messages to the monitor
-                if (clientType === 'monitor') {
-                    return true
-                }
-    
-                return false
-            })
-    
-            if (relevantMessages.length > 0) {
-                console.log(`Sending ${relevantMessages.length} messages to ${clientname}`)
-                relevantMessages.forEach((msg) => client.send(JSON.stringify(msg)))
-            } else {
-                console.log(`No relevant messages found for ${clientname}`)
-            }
-        } else {
-            console.log(`No stored messages found for ${clientname}`)
-        }
-    }
+   async handleRfidScan (data) {
+      const { rfid_tag, player, location, id } = data;
+
+      if (!rfid_tag || !player || !location || !id) {
+         console.log('Missing required data: RFID tag, player, location, or id');
+         return;
+      }
+
+      try {
+         // Step 1: Validate RFID
+         const isValid = await checkRfidValidity(rfid_tag, player);
+         if (!isValid) {
+            console.log(`RFID not allowed at this ${location} with id ${player}`);
+            return;
+         }
+
+         // Step 2: Process the scan (store data, update status, etc.)
+         const locationKey = `${location}-${id}`;
+         const scannedPlayers = dbHelpers.readDatabase(SCANS_PATH, {});
+         
+         // Ensure the location data exists
+         if (!scannedPlayers[locationKey]) {
+            scannedPlayers[locationKey] = {
+                  'scans-from-booth': [],
+                  'scans-from-game-room': [],
+                  'status': 'waiting',
+            };
+         }
+
+         // Add player to the appropriate scan list
+         if (location === 'booth') {
+            scannedPlayers[locationKey]['scans-from-booth'].push(player);
+         } else if (location === 'game-room') {
+            scannedPlayers[locationKey]['scans-from-game-room'].push(player);
+         }
+
+         // Update status if necessary
+         if (
+            scannedPlayers[locationKey]['scans-from-booth'].length > 0 &&
+            scannedPlayers[locationKey]['scans-from-booth'].every(p => scannedPlayers[locationKey]['scans-from-game-room'].includes(p))
+         ) {
+            scannedPlayers[locationKey].status = 'ready';
+            console.log(`All players arrived at ${locationKey}, status: ready`);
+         }
+
+         // Step 3: Persist the updated data
+         dbHelpers.writeDatabase(SCANS_PATH, scannedPlayers);
+         
+         // Step 4: Broadcast message to clients (real-time)
+         const message = {
+            type: 'rfid_scanned',
+            location,
+            id,
+            player,
+            status: scannedPlayers[locationKey].status,
+         };
+         this.broadcastMessage(locationKey, message);
+         this.broadcastMessage('monitor', message); // Broadcast to the monitor or other clients
+
+         // Optional: Log the scan
+         dbHelpers.appendMessages(message);
+         console.log(`Scan processed successfully for ${player} at ${locationKey}`);
+
+      } catch (error) {
+         console.error('Error processing RFID scan:', error);
+      }
+   }
+
+  
 }
 

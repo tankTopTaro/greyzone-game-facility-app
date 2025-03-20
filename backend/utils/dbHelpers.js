@@ -286,18 +286,10 @@ const dbHelpers = {
                return false
             }
 
-            console.log(`Date_end for ${player.id}`, player.facility_session.date_end)
-
             const dateEnd = new Date(player.facility_session.date_end.replace(' ', 'T') + 'Z');
-
-            console.log('dateEnd:', dateEnd)
-
-            console.log('now > dateEnd: ', now > dateEnd, ' dateEnd > oneHourAgo:', dateEnd > oneHourAgo)
 
             return dateEnd <= now && dateEnd >= oneHourAgo
          })
-
-         console.log('Players:', JSON.stringify(playersWithRecentEnd, null, 2))
 
          return playersWithRecentEnd
       } catch (error) {

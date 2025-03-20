@@ -1,1 +1,22 @@
-{}
+{
+  "booth-1": {
+    "scans-from-booth": [
+      "F1-1",
+      "F1-1",
+      "F1-1",
+      "F1-1"
+    ],
+    "scans-from-game-room": [],
+    "status": "waiting"
+  },
+  "game-room-1": {
+    "scans-from-booth": [],
+    "scans-from-game-room": [
+      "F1-1",
+      "F1-1",
+      "F1-1",
+      "F1-1"
+    ],
+    "status": "waiting"
+  }
+}

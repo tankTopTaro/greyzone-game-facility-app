@@ -113,9 +113,7 @@ const Booth = () => {
                console.error('Failed to fetch player data:', error)
             }
         }
-       } else if (data.type === 'clientData'){
-         setClients(data.clients)
-      }
+       }
     }
 
     wsService.current.addListener(handleWebSocketMessage)
@@ -136,10 +134,17 @@ const Booth = () => {
       {players.length > 0 ? (
         <>
             <Row className="g-2">
-               {players.map((player, index) => (
-                  <Col key={player.id} xs={12} sm={6} md={4} className="d-flex justify-content-center">
-                     <PlayerCard player={player} />
-                  </Col>
+               {players.map((player) => (
+                  <PlayerCard key={player.id} classes={'p-2'} cardStyle={{width: '300px'}}>
+                     <div className="d-flex align-items-center w-100">
+                        <img 
+                           src={`/api/images/players/${player.id}.jpg`} 
+                           alt={`${player.nick_name}'s image`}
+                           style={{ height: '100px', width: '100px' }}
+                        />
+                        <h4 className="display-6 w-100 text-center">{player.nick_name}</h4>
+                     </div>
+                  </PlayerCard>
                ))}
             </Row>
          
