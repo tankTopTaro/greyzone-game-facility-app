@@ -94,9 +94,7 @@ export default class Socket {
         try {
             const data = JSON.parse(message.toString())
             
-            if (data.type === 'rfid_scanned' && data.location && data.id) {
-                this.handleRfidScan(data)             
-            } else  if (data.type === 'confirm' && data.from) {
+            if (data.type === 'confirm' && data.from) {
                 dbHelpers.clearMessages(data.message_type, data.from)
                 this.broadcastMessage('monitor', {type: 'confirmed'})
             }
@@ -230,7 +228,7 @@ export default class Socket {
       }
   }
 
-   async handleRfidScan (data) {
+   async handleRfidScan(data) {
       const { rfid_tag, player, location, id } = data;
 
       if (!rfid_tag || !player || !location || !id) {
@@ -246,58 +244,63 @@ export default class Socket {
             return;
          }
 
-         // Step 2: Process the scan (store data, update status, etc.)
-         const locationKey = `${location}-${id}`;
+         // 🔥 Use a room-based key instead of separate booth/game-room keys
+         const roomKey = `gra-${id}`;
+
          const scannedPlayers = dbHelpers.readDatabase(SCANS_PATH, {});
-         
-         // Ensure the location data exists
-         if (!scannedPlayers[locationKey]) {
-            scannedPlayers[locationKey] = {
-                  'scans-from-booth': [],
-                  'scans-from-game-room': [],
-                  'status': 'waiting',
+
+         // Ensure the room data exists
+         if (!scannedPlayers[roomKey]) {
+            scannedPlayers[roomKey] = {
+               'scans-from-booth': [],
+               'scans-from-game-room': [],
+               'status': 'waiting',
             };
          }
 
          // Add player to the appropriate scan list
          if (location === 'booth') {
-            scannedPlayers[locationKey]['scans-from-booth'].push(player);
+            if (!scannedPlayers[roomKey]['scans-from-booth'].includes(player)) {
+               scannedPlayers[roomKey]['scans-from-booth'].push(player);
+            }
          } else if (location === 'game-room') {
-            scannedPlayers[locationKey]['scans-from-game-room'].push(player);
+            if (!scannedPlayers[roomKey]['scans-from-game-room'].includes(player)) {
+               scannedPlayers[roomKey]['scans-from-game-room'].push(player);
+            }
          }
 
          // Update status if necessary
          if (
-            scannedPlayers[locationKey]['scans-from-booth'].length > 0 &&
-            scannedPlayers[locationKey]['scans-from-booth'].every(p => scannedPlayers[locationKey]['scans-from-game-room'].includes(p))
+            scannedPlayers[roomKey]['scans-from-booth'].length > 0 &&
+            scannedPlayers[roomKey]['scans-from-booth'].every(p => 
+               scannedPlayers[roomKey]['scans-from-game-room'].includes(p))
          ) {
-            scannedPlayers[locationKey].status = 'ready';
-            console.log(`All players arrived at ${locationKey}, status: ready`);
+            scannedPlayers[roomKey].status = 'ready';
+            console.log(`All players arrived at ${roomKey}, status: ready`);
          }
 
          // Step 3: Persist the updated data
          dbHelpers.writeDatabase(SCANS_PATH, scannedPlayers);
-         
+
          // Step 4: Broadcast message to clients (real-time)
          const message = {
             type: 'rfid_scanned',
             location,
             id,
             player,
-            status: scannedPlayers[locationKey].status,
+            status: scannedPlayers[roomKey].status,
          };
+         const locationKey = `${location}-${id}`
          this.broadcastMessage(locationKey, message);
          this.broadcastMessage('monitor', message); // Broadcast to the monitor or other clients
 
          // Optional: Log the scan
          dbHelpers.appendMessages(message);
-         console.log(`Scan processed successfully for ${player} at ${locationKey}`);
+         console.log(`Scan processed successfully for ${player} at ${roomKey}`);
 
       } catch (error) {
          console.error('Error processing RFID scan:', error);
       }
    }
-
-  
 }
 

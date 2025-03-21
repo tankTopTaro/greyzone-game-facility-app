@@ -211,7 +211,7 @@ const dbHelpers = {
    },
 
     saveTeam: async(teamData, unique_identifiers, league) => {
-        const db = dbHelpers.readDatabase(DB_PATH)
+        const db = dbHelpers.readDatabase(DB_PATH, {})
 
         if(!db['teams']){
             db['teams'] = {}

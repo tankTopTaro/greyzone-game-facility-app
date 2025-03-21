@@ -16,9 +16,30 @@
       },
       "games_history": {},
       "facility_session": {
-        "date_start": "2025-03-20 08:24:31",
-        "duration_m": 20,
-        "date_end": "2025-03-20 08:44:31"
+        "date_start": "2025-03-21 00:30:02",
+        "duration_m": 30,
+        "date_end": "2025-03-21 01:00:02"
+      }
+    },
+    "F1-2": {
+      "id": "F1-2",
+      "nick_name": "Blaze",
+      "date_add": "2025-02-14",
+      "last_name": "Johnson",
+      "first_name": "Emily",
+      "gender": "Female",
+      "birth_date": "1998-05-15T00:00:00.000Z",
+      "league": {
+        "country": "USA",
+        "city": "New York",
+        "district": "Manhattan",
+        "other": "University League"
+      },
+      "games_history": {},
+      "facility_session": {
+        "date_start": "2025-03-20 23:35:32",
+        "duration_m": 60,
+        "date_end": "2025-03-21 00:35:32"
       }
     },
     "F1-3": {

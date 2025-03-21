@@ -46,6 +46,8 @@ const GameRoomDoorScreen = () => {
                   const isAlreadyScanned = prevPlayers.some(p => p.id === playerData.id)
                   return isAlreadyScanned ? prevPlayers : [...prevPlayers, playerData]
                })
+
+               setGameReady(true)
             } else {
                console.error('Failed to fetch player data:', response.status)
             }
@@ -54,11 +56,11 @@ const GameRoomDoorScreen = () => {
          }
         }
        } else if (data.type === 'status_update' && data.status === 'ready') {
-          setGameReady(true)
+          
 
           try {
             const payload = {
-              players: data.playerIds,
+              players: data.player,
               locationKey: data.locationKey
             }
 
@@ -98,14 +100,6 @@ const GameRoomDoorScreen = () => {
     }
   }, [gra_id, CLIENT])
 
-  /** TODO: 
-   *    - player names will appear on the screen
-   *    - when all players arrive door screen should add "please come in!"
-   *    - at the exact moment, the GFA backend should send the prepared game session to GRA
-   *    - payload will include the book_room_until, (this might be the date_end from the facility session)
-   * 
-   */
-
   return (
       <Container className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '100vh', padding: '20px' }}>
          {scannedPlayers.length > 0 ? (
@@ -123,7 +117,7 @@ const GameRoomDoorScreen = () => {
                      </div>
                   </PlayerCard>
                ))}
-               {gameReady && <h2 className="text-success text-center">Please come in!</h2>}
+               {gameReady && <h2 className="text-success w-100 text-center">Please come in!</h2>}
             </Row>
          </>
          ) : (

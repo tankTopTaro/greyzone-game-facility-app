@@ -1,9 +1,4 @@
-import checkRfidValidity from '../utils/checkRfidValidity.js'
-
-
 let facilityInstance = null
-
-
 
 const rfidController = {
     setFacilityInstance: (instance) => {
