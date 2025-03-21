@@ -83,14 +83,18 @@ const gamesessionsController = {
         for(const teamKey in teamsData) {
             const team = teamsData[teamKey]
             
-            if(Array.isArray(team.players) && team.players.length === players.length &&
-                team.players.every(player => players.includes(player))){
-                    teamInfo = team
-                    break;
+            if (Array.isArray(team.players) && Array.isArray(players) && team.players.length === players.length &&
+               team.players.every(player => players.includes(player))) {
+               teamInfo = team;
+               break;
             }
+
         }
 
-        const playerDetails = players.map(playerId => playersData[playerId] || { id: playerId, error: "Player not found"})
+        const playerDetails = Array.isArray(players) 
+         ? players.map(playerId => playersData[playerId] || { id: playerId, error: "Player not found" }) 
+         : [];
+
 
         if (!roomToGameData[locationKey]) {
             return res.status(404).json({error: `No room data found for ${locationKey}`})

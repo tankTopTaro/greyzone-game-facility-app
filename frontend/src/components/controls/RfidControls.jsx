@@ -2,10 +2,10 @@
 /* eslint-disable react/prop-types */
 import { Button, Container } from "react-bootstrap"
 import Lists from "../Lists"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import axios from 'axios'
 
-const RfidControls = ({ wsService, clients, playersWithSession, playersWithRecentSession, scannedPlayers}) => {
+const RfidControls = ({ clients, playersWithSession, playersWithRecentSession, scannedPlayers}) => {
     const [player, setPlayer] = useState({})
 
     const handleScan = async(type, id, player) => {
@@ -14,7 +14,6 @@ const RfidControls = ({ wsService, clients, playersWithSession, playersWithRecen
             return
         }
 
-        const generatedRfid = `RFID-${player.id}`
         const playerScannedLocations = scannedPlayers[player.id] || []
 
         if (
@@ -30,10 +29,13 @@ const RfidControls = ({ wsService, clients, playersWithSession, playersWithRecen
             : `/api/rfid/game-room/${id}`
 
         try {
-            const response = await axios.post(url, { rfid_tag: generatedRfid, player: player.id })
+            const response = await axios.post(url, { 
+               rfid_tag: 'PLACEHOLDER-RFID', // replace with actual rfid
+               player: player.id 
+            })
+
             if (response.status === 200 && response.data) {
                 console.log(response.data)
-
             }
         } catch (error) {
             console.log('Error scanning RFID', error.message)
@@ -80,7 +82,6 @@ const RfidControls = ({ wsService, clients, playersWithSession, playersWithRecen
                   playersWithSession={playersWithSession}
                   player={player}
                   setPlayer={setPlayer}
-                  scannedPlayers={scannedPlayers}
                />
             </div>
             <div className="d-flex flex-column w-100 w-md-50 p-2">

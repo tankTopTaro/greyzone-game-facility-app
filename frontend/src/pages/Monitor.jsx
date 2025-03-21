@@ -93,6 +93,8 @@ const Monitor = () => {
          } else if (data.type === 'facility_session') {
             setPlayersWithSession(data.active_players)
             setPlayersWithRecentSession(data.recent_players)
+         } else if (data.type === 'error') {
+            console.log(data)
          } else {
             setMessage(data.message || 'No message received')
          }

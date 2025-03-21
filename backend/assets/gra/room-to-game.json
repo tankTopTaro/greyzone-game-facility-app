@@ -1,9 +1,9 @@
 {
-    "game-room-1": {
+    "gra-1": {
         "roomType": "MonkeyRun",
         "rules": ["Sort_it", "Bump_it"]
     },
-    "game-room-2": {
+    "gra-2": {
         "roomType": "MonkeyJump",
         "rules": ["Sort_it", "Bump_it"]
     }

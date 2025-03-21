@@ -17,6 +17,7 @@ import rfidRouter from '../routes/rfid.js'
 import facilitySessionRouter from '../routes/facility-session.js'
 import gameRoomRouter from '../routes/game-room.js'
 import gameSessionsRouter from '../routes/game-sessions.js'
+import FacilityErrorHandler from './FacilityErrorHandler.js'
 
 dotenv.config()
 const __filename = fileURLToPath(import.meta.url)
@@ -28,11 +29,14 @@ const PLAYERS_PATH = path.join(__dirname, '../assets/csa/players.json')
 const ROOMS_PATH = path.join(__dirname, '../assets/gra/rooms.json')
 const HOSTNAMES = path.join(__dirname, '../assets/gra/hostnames.json')
 
+let prevConnectionStatus = {}
+
 export default class Facility {
     constructor(facility_id) {
         this.facility_id = facility_id
         this.socket = new Socket(8081)
         this.roomStatus = {}
+        this.errorHandler = new FacilityErrorHandler(this.socket)
         this.init()
     }
 
@@ -88,118 +92,83 @@ export default class Facility {
     }
 
     monitorCSAConnection() {
-        let loggedError = false;
-    
         const checkConnection = async () => {
             try {
                 const response = await axios.get(`${process.env.CSA_API_URL}/health`);
                 
                 if (response.status === 200) {
                     this.retryPendingApiCalls(CSA_CALLS_PATH);
-                    //this.downloadDatabase(this.facility_id);
-                    if (loggedError) {
-                        console.log(`Reconnected! Retrying pending API calls...`);
-                        loggedError = false;
-                    }
                 }
             } catch (error) {
-                if (!loggedError) {
-                    console.error('CSA Server is down or unreachable:', error.message);
-                    loggedError = true;
-                }
+                this.errorHandler.handleError(error, 'CSA Connection')
             }
         };
     
-        checkConnection().then(() => {
-            setInterval(checkConnection, 5000);
-        });
+        setInterval(checkConnection, 5000);
     }    
   
-    monitorGRAConnection() {
-        const game_room_hostnames = dbHelpers.readDatabase(HOSTNAMES, [])
-        const loggedErrors = {}
-
-        const checkConnection = async () => {
-            await Promise.all(game_room_hostnames.map(async (game_room_hostname) => {
-                try {
-                    const response = await axios.get(`http://${game_room_hostname}:3002/api/health`)
-                    const { hostname } = response.data
-        
-                    if (!this.roomStatus[hostname]) {
-                        this.roomStatus[hostname] = { online: null };
-                    }
-        
-                    const wasOffline = this.roomStatus[hostname].online === false;
-        
-                    if (response.status === 200) {
-                        if (wasOffline || this.roomStatus[hostname].online === null) {
-                            this.retryPendingApiCalls(GRA_CALLS_PATH)
-                            this.socket.updateClientData(hostname, true)
-                            this.roomStatus[hostname].online = true;
-                        }
-                    }
-                } catch (error) {
-                    if (!loggedErrors[game_room_hostname]) {
-                        console.error(`GRA Server ${game_room_hostname} is down or unreachable:`, error.message)
-                        loggedErrors[game_room_hostname] = true;
-                    }
-
-                    if (!this.roomStatus[game_room_hostname]) {
-                        this.roomStatus[game_room_hostname] = { online: null };
-                    }
-        
-                    if (this.roomStatus[game_room_hostname]?.online !== false) {
-                        this.socket.updateClientData(game_room_hostname, false)
-                        this.roomStatus[game_room_hostname].online = false;
-                    }
-                }
-            }))
-
-            this.roomStatus = Object.fromEntries(
-                Object.entries(this.roomStatus).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
-            );
-        
-            dbHelpers.writeDatabase(ROOMS_PATH, this.roomStatus);
-        }        
-    
-        checkConnection().then(() => {
-            setInterval(checkConnection, 5000)
-        })
-    }    
-
-    async retryPendingApiCalls(JSON_PATH) {
-        const db = dbHelpers.readDatabase(JSON_PATH, {})
-
-        if (!db['pending_api_calls']) return
-
-        db['pending_api_calls'].forEach((apiCall) => {
-            if (apiCall.status === 'pending' || apiCall.status === 'failed') {
-               jobQueue.addJob({
-                  id: Date.now(),
-                  run: async () => {
-                    console.log(`Processing API call: ${apiCall.call_id}`)
-                     try {
-                        await axios.post(apiCall.endpoint, apiCall.payload)
-                        console.log(`Reprocessed API call for endpoint ${apiCall.endpoint}`)
-                        await dbHelpers.updateApiCallStatus(JSON_PATH, apiCall.call_id, 'completed')
-                     } catch (error) {
-                        console.error(`Reprocessing failed for endpoint ${apiCall.endpoint}:`, error.message)
-                        await dbHelpers.updateApiCallStatus(JSON_PATH, apiCall.call_id, 'failed')
+    async monitorGRAConnection() {
+      const game_room_hostnames = dbHelpers.readDatabase(HOSTNAMES, []);
+      
+      const checkConnection = async () => {
+         await Promise.all(game_room_hostnames.map(async (hostname) => {
+            try {
+                  const response = await axios.get(`http://${hostname}:3002/api/health`);
+                  if (response.status === 200) {
+                     if (prevConnectionStatus[hostname] !== true) {
+                        this.retryPendingApiCalls(GRA_CALLS_PATH);
+                        this.socket.updateClientData(hostname, true);
+                        this.roomStatus[hostname] = { online: true };
+                        prevConnectionStatus[hostname] = true
                      }
                   }
-               })
+            } catch (error) {
+               if (prevConnectionStatus[hostname] !== false) {
+                  this.errorHandler.handleError(error, `GRA Connection (${hostname})`);
+                  this.socket.updateClientData(hostname, false);
+                  this.roomStatus[hostname] = { online: false };
+                  prevConnectionStatus[hostname] = false
+               }
             }
-        })
-    }
+         }));
+         dbHelpers.writeDatabase(ROOMS_PATH, this.roomStatus);
+         };
+         setInterval(checkConnection, 5000);
+   }
 
-    async fetchPlayerSessions() {
-      const updatedSessions = await dbHelpers.getPlayerWithActiveSession();
-      const recentSessions = await dbHelpers.getPlayerWithRecentSession();
+   async retryPendingApiCalls(JSON_PATH) {
+      const db = dbHelpers.readDatabase(JSON_PATH, {});
+      if (!db['pending_api_calls']) return;
 
-      this.socket.broadcastMessage('monitor', {
-         type: 'facility_session', 
-         active_players: updatedSessions,
-         recent_players: recentSessions
-      })
-    }
+      db['pending_api_calls'].forEach((apiCall) => {
+          if (['pending', 'failed'].includes(apiCall.status)) {
+              jobQueue.addJob({
+                  id: Date.now(),
+                  run: async () => {
+                      try {
+                          await axios.post(apiCall.endpoint, apiCall.payload);
+                          await dbHelpers.updateApiCallStatus(JSON_PATH, apiCall.call_id, 'completed');
+                      } catch (error) {
+                          this.errorHandler.handleError(error, `Retry API (${apiCall.endpoint})`);
+                          await dbHelpers.updateApiCallStatus(JSON_PATH, apiCall.call_id, 'failed');
+                      }
+                  },
+              });
+          }
+      });
+  }
+
+  async fetchPlayerSessions() {
+      try {
+          const updatedSessions = await dbHelpers.getPlayerWithActiveSession();
+          const recentSessions = await dbHelpers.getPlayerWithRecentSession();
+          this.socket.broadcastMessage('monitor', {
+              type: 'facility_session',
+              active_players: updatedSessions,
+              recent_players: recentSessions,
+          });
+      } catch (error) {
+          this.errorHandler.handleError(error, 'Fetch Player Sessions');
+      }
+  }
 }

@@ -121,7 +121,6 @@ const playersController = {
             // Generate dynamic player id and rfid_tag_uid
             const next_increment = dbHelpers.getPlayerNextIncrement(facility_id)
             let playerId = `F${facility_id}-${next_increment}`
-            const rfid_tag_uid = `RFID-${playerId}`
     
             // Prepare player data for storage and CSA API
             const playerData = {
@@ -139,7 +138,7 @@ const playersController = {
                 league_city,
                 league_district,
                 league_other,
-                rfid_tag_uid
+                rfid_tag_uid: '' // Add the rfid tag here
             }
     
             // Store player data in local DB first

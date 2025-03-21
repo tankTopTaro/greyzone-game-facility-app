@@ -1,8 +1,7 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-import { Badge, Container, ListGroup } from "react-bootstrap"
+import { Container, ListGroup } from "react-bootstrap"
 
-const Lists = ({ playersWithSession, playersWithRecentSession, player, setPlayer, scannedPlayers = {} }) => {
+const Lists = ({ playersWithSession, playersWithRecentSession, player, setPlayer }) => {
    const playersToShow = (Array.isArray(playersWithSession) && playersWithSession.length > 0) 
       ? playersWithSession 
       : (Array.isArray(playersWithRecentSession) ? playersWithRecentSession : []);
@@ -25,12 +24,6 @@ const Lists = ({ playersWithSession, playersWithRecentSession, player, setPlayer
                         <span className="text-truncate w-100 overflow-hidden" style={{ whiteSpace: "nowrap" }}>
                            {p.id} - {p.nick_name}
                         </span>
-                        {scannedPlayers[p.id] && [...new Set(scannedPlayers[p.id])].map((location, index) => (
-                           <Badge bg="success" className="ms-2" key={index}>
-                              {location}
-                           </Badge>
-                        ))}
-
                      </div>
                   </ListGroup.Item>
                ))

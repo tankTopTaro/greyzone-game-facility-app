@@ -44,43 +44,45 @@ const Booth = () => {
 
    const handleConfirm = async () => {
       try {
-         if (players.length > 1) {
-            const teamData = {
-               unique_identifiers: players.map(player => player.id),
-               leagues: getCommonLeague(players)
-            }
-
-            const response = await axios.post(`/api/teams/`, teamData)
-
-            if(response.status === 200) {
-               console.log('Players successfully forwarded to the team', response.data)
-               setPlayers([])
-
-               wsService.current.send({
-                  type: 'confirm', 
-                  message_type: 'rfid_scanned',
-                  from: CLIENT,
-               })
-
-               setMessage('Follow the pink lights')
-            }
-         } else {
-            console.log('Single player confirmed.')
-            setPlayers([])
+        if (players.length > 1) {
+          const teamData = {
+            unique_identifiers: players.map(player => player.id),
+            leagues: getCommonLeague(players)
+          };
+    
+          const response = await axios.post(`/api/teams/`, teamData);
+    
+          if (response.status === 200) {
+            console.log('Players successfully forwarded to the team', response.data);
+    
             wsService.current.send({
-               type: 'confirm', 
-               message_type: 'rfid_scanned',
-               from: CLIENT,
-            })
-
-            setMessage('Follow the pink lights')
-         }
-
-         setTimeout(() => setMessage(''), 5000)
+              type: 'confirm',
+              from: CLIENT,
+            });
+    
+            setMessage('Follow the pink lights');
+          }
+        } else {
+          console.log('Single player confirmed.');
+          
+          wsService.current.send({
+            type: 'confirm',
+            from: CLIENT,
+          });
+    
+          setMessage('Follow the pink lights');
+        }
+    
+        // Add a delay for the message reset
+        setTimeout(() => {
+         setMessage('')
+         setPlayers([]);
+      }, 5000);
+    
       } catch (error) {
-         console.log('Error forwarding players to the team:', error.message)
+        console.log('Error forwarding players to the team:', error.message);
       }
-   }
+   }   
 
   // WebSocket
   useEffect(() => {
@@ -95,7 +97,6 @@ const Booth = () => {
        if (data.type === 'rfid_scanned'){
         if (data.location === 'booth' && Number(data.id) === Number(booth_id)) {
             const playerId = data.player
-
             try {
                const response = await axios.get(`/api/players/${playerId}`)
 

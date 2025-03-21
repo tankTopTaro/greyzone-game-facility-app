@@ -46,8 +46,6 @@ const GameRoomDoorScreen = () => {
                   const isAlreadyScanned = prevPlayers.some(p => p.id === playerData.id)
                   return isAlreadyScanned ? prevPlayers : [...prevPlayers, playerData]
                })
-
-               setGameReady(true)
             } else {
                console.error('Failed to fetch player data:', response.status)
             }
@@ -56,13 +54,13 @@ const GameRoomDoorScreen = () => {
          }
         }
        } else if (data.type === 'status_update' && data.status === 'ready') {
-          
-
           try {
             const payload = {
               players: data.player,
               locationKey: data.locationKey
             }
+
+            setGameReady(true)
 
             const gameRoomId = `gra-${gra_id}`
 
@@ -71,7 +69,7 @@ const GameRoomDoorScreen = () => {
             if (response.status === 200) {
               console.log('Game Session will start')
 
-              /* setTimeout(() => {
+              setTimeout(() => {
                 wsService.current.send({
                   type: 'confirm', 
                   message_type: 'rfid_scanned',
@@ -79,7 +77,7 @@ const GameRoomDoorScreen = () => {
                 })
                 setGameReady(false)
                 setScannedPlayers([])
-              }, 5000) */
+              }, 5000)
             }
           } catch (error) {
             console.error('Error submitting game session')

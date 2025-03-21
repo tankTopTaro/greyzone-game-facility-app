@@ -122,6 +122,26 @@ const dbHelpers = {
         }
     },
 
+    clearScans: (from) => {
+      const lastDashIndex = from.lastIndexOf('-')
+
+      if(lastDashIndex === -1) {
+         console.error('Invalid from format')
+         return
+      }
+
+      const location = from.substring(0, lastDashIndex)
+      if (location === 'game-room') {
+         fs.writeFile(SCANS_PATH, '', (err) => {
+            if (err) {
+               console.error('Error clearing scans:', err);
+         } else {
+               console.log('Scans cleared successfully.');
+         }
+         })
+      }
+    },
+
     // API Calls
     storeApiCall: async (JSON_PATH, apiCallRecord) => {
         const db = dbHelpers.readDatabase(JSON_PATH)
