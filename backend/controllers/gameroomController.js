@@ -19,6 +19,8 @@ const gameroomController = {
     // Mark game room as available
     gameRoomStatus[gra_id] = true
 
+    console.log(`Game Room ${gra_id} is now available ${gameRoomStatus[gra_id]}`)
+
     res.send(`Game Room ${gra_id} is now available`)
   },
 

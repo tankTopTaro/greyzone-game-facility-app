@@ -109,22 +109,23 @@ const gamesessionsController = {
         const selectedRule = rules[Math.floor(Math.random() * rules.length)]
         const roomInfo = `${roomType},${selectedRule},L1`
 
-        // Calculate book_room_until using the minimum date_end
-        let minDateEnd = null
-        for (const playerId of players) {
-            const player = playersData[playerId]
+        // Find the latest date_end
+        let latestDateEnd = null;
 
-            if(player && player.facility_session && player.facility_session.date_end) {
-                const playerDateEnd = new Date(player.facility_session.date_end + 'Z')
-                if (!minDateEnd || playerDateEnd < minDateEnd) {
-                    minDateEnd = playerDateEnd
-                }
+         for (const playerId of players) {
+            const player = playersData[playerId];
+
+            if (player && player.facility_session && player.facility_session.date_end) {
+               const playerDateEnd = new Date(player.facility_session.date_end + 'Z');
+               if (!latestDateEnd || playerDateEnd > latestDateEnd) {
+                     latestDateEnd = playerDateEnd;
+               }
             }
-        }
+         }
 
         let bookRoomUntil = null
-        if (minDateEnd) {
-            bookRoomUntil = new Date(minDateEnd.getTime() + 6 * 60 * 1000) // Add 6 minutes
+        if (latestDateEnd) {
+            bookRoomUntil = new Date(latestDateEnd.getTime() + 6 * 60 * 1000) // Add 6 minutes
                 .toISOString().replace('T', ' ').substring(0, 19)   // Format as 'YYYY-MM-DD HH:mm:ss'
         }
 
