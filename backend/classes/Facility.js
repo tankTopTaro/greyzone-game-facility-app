@@ -7,9 +7,6 @@ import express from 'express'
 import { fileURLToPath } from 'url'
 import { readDatabase, updateApiCallStatus, writeDatabase } from '../utils/dbHelpers.js'
 import { jobQueue } from '../utils/queue.js'
-import { Mutex } from 'async-mutex'
-
-const mutex = new Mutex()
 
 import Socket from './Socket.js'
 import ReportErrorToCentral from './ReportErrorToCentral.js'
@@ -160,105 +157,94 @@ export default class Facility {
    }
 
    async monitorCSAConnection() {
-      const release = await mutex.acquire()
+      const health_url = `${process.env.CSA_API_URL}/health`
+      let interval = 15000
+      let allOnlineSince = Date.now()
 
-      try {
-         const health_url = `${process.env.CSA_API_URL}/health`
-         let interval = 15000
-         let allOnlineSince = Date.now()
-
-         const check = async () => {
-            const updatedStatus = await this.checkConnectionHealth(
-               health_url, 
-               CSA_STATUS_PATH, 
-               () => {
-                  this.retryPendingAPICalls(CSA_API_CALLS_PATH)
-               }
-            )
-
-            writeDatabase(CSA_STATUS_PATH, updatedStatus)
-
-            const success = updatedStatus?.online === true
-
-            if (success) {
-               if (Date.now() - allOnlineSince > 5 * 60 * 1000) {
-                  interval = 60000  // 60 seconds
-               }
-            } else {
-               allOnlineSince = Date.now()
-               interval = 15000  // 15 seconds
+      const check = async () => {
+         const updatedStatus = await this.checkConnectionHealth(
+            health_url, 
+            CSA_STATUS_PATH, 
+            () => {
+               this.retryPendingAPICalls(CSA_API_CALLS_PATH)
             }
+         )
 
-            setTimeout(check, interval)
+         writeDatabase(CSA_STATUS_PATH, updatedStatus)
+
+         const success = updatedStatus?.online === true
+
+         if (success) {
+            if (Date.now() - allOnlineSince > 5 * 60 * 1000) {
+               interval = 60000  // 60 seconds
+            }
+         } else {
+            allOnlineSince = Date.now()
+            interval = 15000  // 15 seconds
          }
-         check()
-      } finally {
-         release()
+
+         setTimeout(check, interval)
       }
+      check()
    }
 
    async monitorGRAConnection() {
-      const release = await mutex.acquire()
-      try {
-         let interval = 15000
-         let allOnlineSince = Date.now()
-      
-         const check = async () => {
-            const currentStatus = readDatabase(GAME_ROOM_STATUS_PATH, {})
-            const statusUpdates = {}
-      
-            const checks = await Promise.all(
-               Object.entries(currentStatus).map(async ([hostname, oldStatus]) => {
-                  if (!hostname) return false
-      
-                  const ipv4Address = await this.getIPv4Address(hostname)
-                  const health_url = `http://${ipv4Address}:3002/api/health`
-      
-                  const updatedStatus = await this.checkConnectionHealth(
-                     health_url,
-                     GAME_ROOM_STATUS_PATH,
-                     () => this.retryPendingAPICalls(GRA_API_CALLS_PATH),
-                     hostname
-                  )
-      
-                  statusUpdates[hostname] = {
-                     ...oldStatus,
-                     ...updatedStatus[hostname]
-                  }
-      
-                  return updatedStatus[hostname]?.online
-               })
-            )
-      
-            const allOnline = checks.every(Boolean)
-      
-            // Write updated statuses back
-            const sortedStatusUpdates = Object.keys(statusUpdates)
-               .sort()
-               .reduce((acc, key) => {
-                  acc[key] = statusUpdates[key]
-                  return acc
-               }, {})
-      
-            writeDatabase(GAME_ROOM_STATUS_PATH, sortedStatusUpdates)
-      
-            // Adjust interval
-            if (allOnline) {
-               if (Date.now() - allOnlineSince > 5 * 60 * 1000) {
-                  interval = 60000
+      let interval = 15000
+      let allOnlineSince = Date.now()
+   
+      const check = async () => {
+         const currentStatus = readDatabase(GAME_ROOM_STATUS_PATH, {})
+         const statusUpdates = {}
+   
+         const checks = await Promise.all(
+            Object.entries(currentStatus).map(async ([hostname, oldStatus]) => {
+               if (!hostname) return false
+   
+               const ipv4Address = await this.getIPv4Address(hostname)
+               const health_url = `http://${ipv4Address}:3002/api/health`
+   
+               const updatedStatus = await this.checkConnectionHealth(
+                  health_url,
+                  GAME_ROOM_STATUS_PATH,
+                  () => this.retryPendingAPICalls(GRA_API_CALLS_PATH),
+                  hostname
+               )
+   
+               statusUpdates[hostname] = {
+                  ...oldStatus,
+                  ...updatedStatus[hostname]
                }
-            } else {
-               allOnlineSince = Date.now()
-               interval = 15000
+   
+               return updatedStatus[hostname]?.online
+            })
+         )
+   
+         const allOnline = checks.every(Boolean)
+   
+         // Write updated statuses back
+         const sortedStatusUpdates = Object.keys(statusUpdates)
+            .sort()
+            .reduce((acc, key) => {
+               acc[key] = statusUpdates[key]
+               return acc
+            }, {})
+   
+         writeDatabase(GAME_ROOM_STATUS_PATH, sortedStatusUpdates)
+   
+         // Adjust interval
+         if (allOnline) {
+            if (Date.now() - allOnlineSince > 5 * 60 * 1000) {
+               interval = 60000
             }
-      
-            setTimeout(check, interval)
+         } else {
+            allOnlineSince = Date.now()
+            interval = 15000
          }
-      
-         check()
-      } catch (error) {
-         release()
+   
+         setTimeout(check, interval)
       }
+   
+      check()
    }
 
    async retryWithBackoff(action, maxRetries, initialDelay) {
