@@ -3,11 +3,10 @@ import { Container } from 'react-bootstrap'
 import WebSocketService from '../utils/WebSocketService.js'
 import Navigation from "../components/Navigation"
 import Alerts from "../components/Alerts"
-import Header from "../components/Header"
 import Controls from '../components/Controls'
 import axios from 'axios'
 
-const WS_URL = 'ws://192.168.254.100:8081'
+const WS_URL = `ws://${window.location.hostname}:8081`
 const CLIENT = 'monitor'
 
 const Monitor = () => {

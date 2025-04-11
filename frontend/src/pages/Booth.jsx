@@ -6,7 +6,7 @@ import WebSocketService from '../utils/WebSocketService.js'
 import { Button, Container, Row } from 'react-bootstrap'
 import PlayerCard from '../components/PlayerCard.jsx'
 
-const WS_URL = 'ws://192.168.254.100:8081'
+const WS_URL = `ws://${window.location.hostname}:8081`
 
 const Booth = () => {
    const { booth_id } = useParams()

@@ -6,7 +6,7 @@ import PlayerCard from "../components/PlayerCard.jsx"
 import { Button, Container, Row } from "react-bootstrap"
 import axios from "axios"
 
-const WS_URL = 'ws://192.168.254.100:8081'
+const WS_URL = `ws://${window.location.hostname}:8081`
 
 const GameRoomDoorScreen = () => {
   const { gra_id } = useParams()

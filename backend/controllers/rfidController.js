@@ -213,6 +213,10 @@ const processRfidScan = async (location, id) => {
                   try {
                      await axios.post(apiCallRecord.endpoint, apiCallRecord.payload)
                      await updateApiCallStatus(GRA_API_CALLS_PATH, apiCallRecord.call_id, 'completed')
+                     facilityInstance.socket.broadcastMessage('monitor', {
+                        type: 'confirmed',
+                        message: `Scan processing completed for room ${roomKey}`
+                     })
                      facilityInstance.reportErrorToCentral.resolveError({ error: `Failed to start game session for room ${roomKey}` })
                   } catch (error) {
                      await updateApiCallStatus(GRA_API_CALLS_PATH, apiCallRecord.call_id, 'failed')
@@ -230,11 +234,6 @@ const processRfidScan = async (location, id) => {
             facilityInstance.socket.broadcastMessage(`${location}-${id}`, {
                type: 'status_update',
                status: roomData.status
-            })
-
-            facilityInstance.socket.broadcastMessage('monitor', {
-               type: 'confirmed',
-               message: `Scan processing completed for room ${roomKey}`
             })
 
             // reset after sending ready message to door-screen
@@ -267,6 +266,7 @@ const processRfidScan = async (location, id) => {
             }
 
             await proceedToSubmitSession()
+
             return { status: 'ok', message: 'Players match. Session submitted.' }
 
          } else if (roomData['game-room'].length < roomData.booth.length) {
